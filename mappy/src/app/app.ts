@@ -43,15 +43,19 @@ const attribution = [
 export class App implements AfterViewInit {
   private map!: L.Map;
   private roadsLayer?: L.GeoJSON;
+  private buildingsLayer?: L.GeoJSON;
   private baseLayer?: L.TileLayer;
   private rasterLayer?: L.TileLayer.WMS;
   selection = 2;
   showRoads = false;
+  showBuildings = false;
   showRasterLayer = false;
 
   // Caching
   private loadedBounds?: L.LatLngBounds;
   private cachedRoads: any[] = [];
+  private loadedBuildingsBounds?: L.LatLngBounds;
+  private cachedBuildings: any[] = [];
 
   constructor(private geoServerService: GeoServerService) { }
 
@@ -84,6 +88,9 @@ export class App implements AfterViewInit {
       if (this.showRoads) {
         this.loadRoadsInView();
       }
+      if (this.showBuildings) {
+        this.loadBuildingsInView();
+      }
     });
   }
 
@@ -113,7 +120,7 @@ export class App implements AfterViewInit {
   private addGeoServerRasterLayer(): void {
     // WMS Layer from GeoServer
     this.rasterLayer = L.tileLayer.wms(geoserverUrl, {
-      layers: 'ibf-system:flood_extent_24-hour_ETH', // Your layer name
+      layers: 'ibf-system:flood_extent_11-hour_ETH', // 'ibf-system:flood_extent_24-hour_ETH', // Your layer name
       format: 'image/png',
       transparent: true,
       version: '1.1.0',
@@ -145,6 +152,19 @@ export class App implements AfterViewInit {
       if (this.roadsLayer) {
         this.map.removeLayer(this.roadsLayer);
         this.roadsLayer = undefined;
+      }
+    }
+  }
+
+  toggleBuildings(): void {
+    this.showBuildings = !this.showBuildings;
+    if (this.showBuildings) {
+      this.loadBuildingsInView();
+    } else {
+      // Remove buildings layer
+      if (this.buildingsLayer) {
+        this.map.removeLayer(this.buildingsLayer);
+        this.buildingsLayer = undefined;
       }
     }
   }
@@ -205,15 +225,15 @@ export class App implements AfterViewInit {
               case 'primary':
                 return { color: '#e67e22', weight: 3 };
               case 'secondary':
-                return { color: '#f39c12', weight: 2.5 };
+                return { color: '#5900d5', weight: 2.5 };
               case 'tertiary':
-                return { color: '#f1c40f', weight: 2 };
+                return { color: '#1500ff', weight: 2 };
               case 'unclassified':
                 return { color: '#0ae675ff', weight: 2 };
               case 'track':
-                return { color: '#f700ffff', weight: 2 };
+                return { color: 'rgb(255, 204, 0)', weight: 2 };
               default:
-                return { color: '#3498db', weight: 1.5 };
+                return { color: '#ff00ea', weight: 1.5 };
             }
           },
           onEachFeature: (feature, layer) => {
@@ -230,6 +250,79 @@ export class App implements AfterViewInit {
       },
       error: (error) => {
         console.error('Error loading roads:', error);
+      }
+    });
+  }
+
+  private loadBuildingsInView(): void {
+    // Get current map bounds
+    const bounds = this.map.getBounds();
+
+    // Check if we already have data for this area (with some buffer)
+    if (this.buildingsLayer && this.loadedBuildingsBounds && this.loadedBuildingsBounds.contains(bounds)) {
+      console.log('Using cached buildings');
+      return; // Already loaded this area
+    }
+
+    // Expand bounds by 50% in each direction for better caching
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+    const latBuffer = (ne.lat - sw.lat) * 0.5;
+    const lngBuffer = (ne.lng - sw.lng) * 0.5;
+
+    const expandedBounds = L.latLngBounds(
+      [sw.lat - latBuffer, sw.lng - lngBuffer],
+      [ne.lat + latBuffer, ne.lng + lngBuffer]
+    );
+
+    // Store the loaded bounds for future checks
+    this.loadedBuildingsBounds = expandedBounds;
+
+    const expandedSW = expandedBounds.getSouthWest();
+    const expandedNE = expandedBounds.getNorthEast();
+
+    // Fetch buildings within expanded bounding box
+    this.geoServerService.getBuildingsInBoundingBox(
+      expandedSW.lng,  // minLon
+      expandedSW.lat,  // minLat
+      expandedNE.lng,  // maxLon
+      expandedNE.lat   // maxLat
+    ).subscribe({
+      next: (geojson) => {
+        console.log(`Loaded ${geojson.features.length} building features (cached area)`);
+
+        // Remove existing buildings layer
+        if (this.buildingsLayer) {
+          this.map.removeLayer(this.buildingsLayer);
+        }
+
+        // Add new features to cache
+        this.cachedBuildings = geojson.features;
+
+        this.buildingsLayer = L.geoJSON(geojson, {
+          style: () => {
+            // All buildings rendered in green
+            return { 
+              color: '#00ff00',
+              fillColor: '#00ff00',
+              fillOpacity: 0.5,
+              weight: 2 
+            };
+          },
+          onEachFeature: (feature, layer) => {
+            if (feature.properties) {
+              const props = feature.properties;
+              layer.bindPopup(`
+                <strong>Building</strong><br>
+                <strong>ID:</strong> ${props.referenceId || 'N/A'}<br>
+                ${props.exposed ? '<strong>Status:</strong> Exposed' : ''}
+              `);
+            }
+          }
+        }).addTo(this.map);
+      },
+      error: (error) => {
+        console.error('Error loading buildings:', error);
       }
     });
   }

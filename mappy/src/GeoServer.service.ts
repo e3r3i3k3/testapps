@@ -30,4 +30,26 @@ export class GeoServerService {
 
         return this.http.get(this.wfsUrl, { params });
     }
+
+    getBuildingsInBoundingBox(
+        minLon: number,
+        minLat: number,
+        maxLon: number,
+        maxLat: number
+    ): Observable<any> {
+        const bbox = `${minLon},${minLat},${maxLon},${maxLat},EPSG:4326`;
+
+        const params = {
+            service: 'WFS',
+            version: '1.0.0',
+            request: 'GetFeature',
+            typeName: 'ibf-system:ne_110m_admin_0_boundary_lines_land',
+            //typeName: 'ibf-system:buildings',
+            outputFormat: 'application/json',
+            srsName: 'EPSG:4326',
+            bbox: bbox
+        };
+
+        return this.http.get(this.wfsUrl, { params });
+    }
 }
