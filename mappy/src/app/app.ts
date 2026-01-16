@@ -50,6 +50,8 @@ export class App implements AfterViewInit {
   showRoads = false;
   showBuildings = false;
   showRasterLayer = false;
+  private minZoomForRoads = 10; // Only load roads at zoom 15+
+  buildingColor = '#00ff00'; // Default green color
 
   // Caching
   private loadedBounds?: L.LatLngBounds;
@@ -90,6 +92,21 @@ export class App implements AfterViewInit {
       }
       if (this.showBuildings) {
         this.loadBuildingsInView();
+      }
+    });
+
+    // Handle zoom level changes for roads
+    this.map.on('zoomend', () => {
+      if (this.showRoads) {
+        const zoom = this.map.getZoom();
+        if (zoom < this.minZoomForRoads && this.roadsLayer) {
+          // Remove layer if zoomed out too far
+          this.map.removeLayer(this.roadsLayer);
+          this.roadsLayer = undefined;
+        } else if (zoom >= this.minZoomForRoads) {
+          // Load layer if zoomed in enough
+          this.loadRoadsInView();
+        }
       }
     });
   }
@@ -146,6 +163,12 @@ export class App implements AfterViewInit {
   toggleRoads(): void {
     this.showRoads = !this.showRoads;
     if (this.showRoads) {
+      const zoom = this.map.getZoom();
+      if (zoom < this.minZoomForRoads) {
+        alert(`Zoom now: ${zoom}. Please zoom in to level ${this.minZoomForRoads} or higher to view roads`);
+        this.showRoads = false;
+        return;
+      }
       this.loadRoadsInView();
     } else {
       // Remove roads layer
@@ -171,6 +194,13 @@ export class App implements AfterViewInit {
 
 
   private loadRoadsInView(): void {
+    // Check zoom level
+    const zoom = this.map.getZoom();
+    if (zoom < this.minZoomForRoads) {
+      //console.log(`Zoom level ${zoom} too low for roads (min: ${this.minZoomForRoads})`);
+      return;
+    }
+
     // Get current map bounds
     const bounds = this.map.getBounds();
 
@@ -301,10 +331,10 @@ export class App implements AfterViewInit {
 
         this.buildingsLayer = L.geoJSON(geojson, {
           style: () => {
-            // All buildings rendered in green
+            // All buildings rendered in the current color
             return { 
-              color: '#00ff00',
-              fillColor: '#00ff00',
+              color: this.buildingColor,
+              fillColor: this.buildingColor,
               fillOpacity: 0.5,
               weight: 2 
             };
@@ -325,5 +355,23 @@ export class App implements AfterViewInit {
         console.error('Error loading buildings:', error);
       }
     });
+  }
+
+  randomizeColor(): void {
+    // Generate a random hex color
+    const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+    this.buildingColor = randomColor;
+    
+    // Reload buildings with new color if they're currently visible
+
+      // Remove buildings layer
+      if (this.buildingsLayer) {
+        this.map.removeLayer(this.buildingsLayer);
+        this.buildingsLayer = undefined;
+      }
+      
+    if (this.showBuildings && this.buildingsLayer) {
+      this.loadBuildingsInView();
+    }
   }
 }
