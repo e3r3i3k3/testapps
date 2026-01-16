@@ -46,7 +46,7 @@ export class App implements AfterViewInit {
   private baseLayer?: L.TileLayer;
   private rasterLayer?: L.TileLayer.WMS;
   selection = 2;
-  showRoads = true;
+  showRoads = false;
   showRasterLayer = false;
 
   // Caching
@@ -78,8 +78,12 @@ export class App implements AfterViewInit {
     // Erik note:
     // This is best practices for vector data, but is not needed for raster WMS layers, since
     // GeoServer handles that automatically
+    // Also caching needs to be added, and it's not perfect with how its in here now. Needs more testing
+    // Vectors are not provided chuncked for roads it looks like now
     this.map.on('moveend', () => {
-      this.loadRoadsInView();
+      if (this.showRoads) {
+        this.loadRoadsInView();
+      }
     });
   }
 
@@ -108,7 +112,7 @@ export class App implements AfterViewInit {
 
   private addGeoServerRasterLayer(): void {
     // WMS Layer from GeoServer
-    const wmsLayer = L.tileLayer.wms(geoserverUrl, {
+    this.rasterLayer = L.tileLayer.wms(geoserverUrl, {
       layers: 'ibf-system:flood_extent_24-hour_ETH', // Your layer name
       format: 'image/png',
       transparent: true,
@@ -117,10 +121,33 @@ export class App implements AfterViewInit {
       crs: L.CRS.EPSG4326,
     });
 
-    wmsLayer.addTo(this.map);
+    this.rasterLayer.addTo(this.map);
   }
 
-  toggleRasterLayer(): void { }
+  toggleRasterLayer(): void { 
+    this.showRasterLayer = !this.showRasterLayer;
+    if (this.showRasterLayer) {
+      this.addGeoServerRasterLayer();
+    } else {
+      // Remove raster layer
+      if (this.rasterLayer) {
+        this.map.removeLayer(this.rasterLayer);
+        this.rasterLayer = undefined;
+      }
+    }
+  }
+  toggleRoads(): void {
+    this.showRoads = !this.showRoads;
+    if (this.showRoads) {
+      this.loadRoadsInView();
+    } else {
+      // Remove roads layer
+      if (this.roadsLayer) {
+        this.map.removeLayer(this.roadsLayer);
+        this.roadsLayer = undefined;
+      }
+    }
+  }
 
 
   private loadRoadsInView(): void {
@@ -128,7 +155,7 @@ export class App implements AfterViewInit {
     const bounds = this.map.getBounds();
 
     // Check if we already have data for this area (with some buffer)
-    if (this.loadedBounds && this.loadedBounds.contains(bounds)) {
+    if (this.roadsLayer && this.loadedBounds && this.loadedBounds.contains(bounds)) {
       console.log('Using cached roads');
       return; // Already loaded this area
     }
