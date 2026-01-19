@@ -1,0 +1,63 @@
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+  #map {
+    height: 600px;
+  }
+  .map-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+  }
+  .map-controls button {
+    padding: 10px 20px;
+    border: 2px solid #3498db;
+    background-color: white;
+    color: #3498db;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+  .map-controls button:hover {
+    background-color: #3498db;
+    color: white;
+  }
+  .map-controls button.active {
+    background-color: #2980b9;
+    color: white;
+    border-color: #2980b9;
+  }
+</style>
+<!-- Make sure you put this AFTER Leaflet's CSS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+
+
+
+<main class="main">
+
+  <div class="content">
+    <div id="map"></div>
+    <div class="map-controls">
+      <button (click)="changeMapSource(0)" [class.active]="selection === 0">OpenStreetMap</button>
+      <button (click)="changeMapSource(1)" [class.active]="selection === 1">OSM HOT</button>
+      <button (click)="changeMapSource(2)" [class.active]="selection === 2">CartoDB Light</button>
+      <button (click)="changeMapSource(3)" [class.active]="selection === 3">CartoDB Dark</button>
+      <button (click)="changeMapSource(4)" [class.active]="selection === 4">Stamen Toner</button>
+      <button (click)="changeMapSource(5)" [class.active]="selection === 5">Esri World</button>
+    </div>
+    <div class="map-controls">
+      <button (click)="toggleRoads()" [class.active]="showRoads">Toggle Roads</button>
+      <button (click)="toggleBuildings()" [class.active]="showBuildings">Toggle Borders</button>
+      <button (click)="toggleRasterLayer()" [class.active]="showRasterLayer">Toggle Flood Layer</button>
+    </div>
+    <div class="map-controls">
+      <button (click)="randomizeColor()">Random Color</button>
+    </div>
+  </div>
+</main>
