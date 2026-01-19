@@ -4,6 +4,7 @@
     width: 100%;
     height: 600px;
   }
+
   .map-controls {
     display: flex;
     justify-content: center;
@@ -11,6 +12,7 @@
     margin-top: 15px;
     flex-wrap: wrap;
   }
+
   .map-controls button {
     padding: 10px 20px;
     border: 2px solid #3498db;
@@ -22,10 +24,12 @@
     font-weight: 500;
     transition: all 0.3s ease;
   }
+
   .map-controls button:hover {
     background-color: #3498db;
     color: white;
   }
+
   .map-controls button.active {
     background-color: #2980b9;
     color: white;
@@ -52,6 +56,26 @@
     </div>
     <div class="map-controls">
       <button (click)="randomizeColor()">Random Color</button>
+    </div>
+
+    <div class="map-controls">
+      <table class="controls">
+        <tr>
+          <td><label for="hue">hue</label></td>
+          <td><input id="hue" type="range" min="-180" max="180" value="0" /></td>
+          <td><span id="hueOut"></span> °&nbsp;</td>
+        </tr>
+        <tr>
+          <td><label for="chroma">chroma</label></td>
+          <td><input id="chroma" type="range" min="0" max="100" value="100" /></td>
+          <td><span id="chromaOut"></span> %</td>
+        </tr>
+        <tr>
+          <td><label for="lightness">lightness</label></td>
+          <td><input id="lightness" type="range" min="0" max="100" value="100" /></td>
+          <td><span id="lightnessOut"></span> %</td>
+        </tr>
+      </table>
     </div>
   </div>
 </main>

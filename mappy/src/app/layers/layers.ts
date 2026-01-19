@@ -1,5 +1,5 @@
 import { Component, AfterViewInit } from '@angular/core';
-import Map from 'ol/Map';
+import Mapp from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
@@ -11,6 +11,7 @@ import GeoJSON from 'ol/format/GeoJSON';
 import { Style, Stroke, Fill } from 'ol/style';
 import { fromLonLat, transformExtent } from 'ol/proj';
 import { GeoServerService } from '../../GeoServer.service';
+import RasterSource from 'ol/source/Raster.js';
 
 const mapSources = [
   'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -39,7 +40,7 @@ const geoserverUrl = 'http://localhost:8081/geoserver/ibf-system/wms';
   styleUrl: '../../styles.css'
 })
 export class Layers implements AfterViewInit {
-  private map!: Map;
+  private map!: Mapp;
   private baseLayer!: TileLayer<XYZ>;
   private roadsLayer?: VectorLayer<VectorSource>;
   private buildingsLayer?: VectorLayer<VectorSource>;
@@ -73,7 +74,7 @@ export class Layers implements AfterViewInit {
       })
     });
 
-    this.map = new Map({
+    this.map = new Mapp({
       target: 'ol-map',
       layers: [this.baseLayer],
       view: new View({
@@ -135,8 +136,27 @@ export class Layers implements AfterViewInit {
         serverType: 'geoserver',
         transition: 0
       }),
-      opacity: 0.7
+      // background: '#ff00ff', // No alpha support, fills map with color
+      opacity: 1
     });
+
+// beforeoperations prerender postrender
+this.rasterLayer.on('prerender', (evt) => {
+  // return
+  if (evt.context) {
+    const context = evt.context as CanvasRenderingContext2D;
+    context.filter = 'grayscale(80%) invert(100%) ';
+    context.globalCompositeOperation = 'source-over';
+  }
+});
+
+this.rasterLayer.on('postrender', (evt) => {
+  if (evt.context) {
+    const context = evt.context as CanvasRenderingContext2D;
+    context.filter = 'none';
+  }
+});
+
     this.map.addLayer(this.rasterLayer);
   }
 
@@ -308,9 +328,15 @@ export class Layers implements AfterViewInit {
       this.loadBuildingsInView();
     }
   }
+  
 
   private boundsContains(outer: [number, number, number, number], inner: number[]): boolean {
     return outer[0] <= inner[0] && outer[1] <= inner[1] && 
            outer[2] >= inner[2] && outer[3] >= inner[3];
   }
+
+  // =========================
+  //=======================
+  //const controlIds = ['hue', 'chroma', 'lightness'];
+  //const controls : Map<string, string> = new Map();
 }

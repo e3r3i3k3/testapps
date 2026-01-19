@@ -8,7 +8,7 @@
   },
   "include": [
     "src/**/*.ts"
-  ],
+, "src/app/layers/shader.ts"  ],
   "exclude": [
     "src/**/*.spec.ts"
   ]
