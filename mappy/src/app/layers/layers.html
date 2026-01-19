@@ -45,5 +45,13 @@
       <button (click)="changeMapSource(4)" [class.active]="selection === 4">Stamen Toner</button>
       <button (click)="changeMapSource(5)" [class.active]="selection === 5">Esri World</button>
     </div>
+    <div class="map-controls">
+      <button (click)="toggleRoads()" [class.active]="showRoads">Toggle Roads</button>
+      <button (click)="toggleBuildings()" [class.active]="showBuildings">Toggle Borders</button>
+      <button (click)="toggleRasterLayer()" [class.active]="showRasterLayer">Toggle Flood Layer</button>
+    </div>
+    <div class="map-controls">
+      <button (click)="randomizeColor()">Random Color</button>
+    </div>
   </div>
 </main>
