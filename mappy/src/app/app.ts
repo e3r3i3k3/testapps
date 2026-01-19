@@ -143,6 +143,7 @@ export class App implements AfterViewInit {
       version: '1.1.0',
       attribution: 'GeoServer',
       crs: L.CRS.EPSG4326,
+      className: 'green-raster-layer', // Apply green tint via CSS
     });
 
     this.rasterLayer.addTo(this.map);
@@ -369,7 +370,7 @@ export class App implements AfterViewInit {
         this.map.removeLayer(this.buildingsLayer);
         this.buildingsLayer = undefined;
       }
-      
+
     if (this.showBuildings && this.buildingsLayer) {
       this.loadBuildingsInView();
     }
