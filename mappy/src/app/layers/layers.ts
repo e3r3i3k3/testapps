@@ -11,6 +11,7 @@ import GeoJSON from 'ol/format/GeoJSON';
 import { Style, Stroke, Fill } from 'ol/style';
 import { fromLonLat, transformExtent } from 'ol/proj';
 import { GeoServerService } from '../../GeoServer.service';
+import Overlay from 'ol/Overlay';
 import RasterSource from 'ol/source/Raster.js';
 import VectorTileLayer from 'ol/layer/VectorTile';
 import VectorTileSource from 'ol/source/VectorTile.js';
@@ -22,8 +23,8 @@ import Text from 'ol/style/Text.js';
 import TileGrid from 'ol/tilegrid/TileGrid.js';
 
 // does not work
-const url1 = 'http://localhost:8081/geoserver/ibf-system/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&FORMAT=application/vnd.mapbox-vector-tile&TRANSPARENT=true&LAYERS=ne_110m_admin_0_boundary_lines_land&SRS=EPSG:900913&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}';
-const url1roads = 'http://localhost:8081/geoserver/ibf-system/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&FORMAT=application/vnd.mapbox-vector-tile&TRANSPARENT=true&LAYERS=roads&SRS=EPSG:900913&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}';
+//const url1 = 'http://localhost:8081/geoserver/ibf-system/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&FORMAT=application/vnd.mapbox-vector-tile&TRANSPARENT=true&LAYERS=ne_110m_admin_0_boundary_lines_land&SRS=EPSG:900913&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}';
+//const url1roads = 'http://localhost:8081/geoserver/ibf-system/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&FORMAT=application/vnd.mapbox-vector-tile&TRANSPARENT=true&LAYERS=roads&SRS=EPSG:900913&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}';
 //works
 // be sure to match the tilematrix set (EPSG:900913, 	EPSG:404000, etc.)
 const url2 = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:ne_110m_admin_0_boundary_lines_land&STYLE=&TILEMATRIX=EPSG:900913:{z}&TILEMATRIXSET=EPSG:900913&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
@@ -31,10 +32,11 @@ const url2roadsnew = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=G
 
 // gis_osm_roads_free_1
 // does not work
-const url2roads = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:roads&STYLE=&TILEMATRIX=EPSG:404000:{z}&TILEMATRIXSET=EPSG:404000&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
+//const url2roads = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:roads&STYLE=&TILEMATRIX=EPSG:404000:{z}&TILEMATRIXSET=EPSG:404000&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
 // does not work
-const url3 = 'http://localhost:8081/geoserver/ibf-system/wms?service=WMS&request=GetMap&layers=ne_110m_admin_0_boundary_lines_land&bbox={bbox-epsg-3857}&width=256&height=256&srs=EPSG:900913&format=application/vnd.mapbox-vector-tile';
-const url3roads = 'http://localhost:8081/geoserver/ibf-system/wms?service=WMS&request=GetMap&layers=roads&bbox={bbox-epsg-3857}&width=256&height=256&srs=EPSG:900913&format=application/vnd.mapbox-vector-tile';
+//const url3 = 'http://localhost:8081/geoserver/ibf-system/wms?service=WMS&request=GetMap&layers=ne_110m_admin_0_boundary_lines_land&bbox={bbox-epsg-3857}&width=256&height=256&srs=EPSG:900913&format=application/vnd.mapbox-vector-tile';
+//const url3roads = 'http://localhost:8081/geoserver/ibf-system/wms?service=WMS&request=GetMap&layers=roads&bbox={bbox-epsg-3857}&width=256&height=256&srs=EPSG:900913&format=application/vnd.mapbox-vector-tile';
+
 
 const mapSources = [
   'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -68,6 +70,7 @@ export class Layers implements AfterViewInit {
   private roadsLayer?: VectorLayer<VectorSource>;
   private bordersLayer?: VectorLayer<VectorSource>;
   private rasterLayer?: TileLayer<TileWMS>;
+  private popup?: Overlay;
   selection = 2;
   showRoads = false;
   showBorders = false;
@@ -86,6 +89,7 @@ export class Layers implements AfterViewInit {
   ngAfterViewInit(): void {
     this.initMap();
     this.setupMapEventListeners();
+    this.setupPopup();
   }
 
   private initMap(): void {
@@ -125,15 +129,36 @@ export class Layers implements AfterViewInit {
     // Add borders layer
     const roadsMVT = new VectorTileLayer({
       declutter: true,
+      minZoom: 10, // Only show at zoom 10 and higher
+      maxZoom: 20, // Hide at zoom levels above 20
       source: new VectorTileSource({
         attributions:
           'FFFFFFFFFFF',
         format: new MVT(),
                 url: url2roadsnew,
       }),
+      style: (feature) => {
+            const highway = feature.get('fclass');
+            let color = '#ff00ea';
+            let width = 1.5;
+            
+            switch (highway) {
+              case 'motorway': color = '#e74c3c'; width = 4; break;
+              case 'primary': color = '#e67e22'; width = 3; break;
+              case 'secondary': color = '#5900d5'; width = 2.5; break;
+              case 'tertiary': color = '#1500ff'; width = 2; break;
+              case 'unclassified': color = '#0ae675ff'; width = 2; break;
+              case 'track': color = 'rgb(255, 204, 0)'; width = 2; break;
+            }
+            
+            return new Style({
+              stroke: new Stroke({ color, width })
+            });
+          }
+      /*
       style: new Style({
             stroke: new Stroke({ color: '#FF00FFFF', width: 2 })
-          })
+          })*/
       //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
     });
 
@@ -169,6 +194,38 @@ export class Layers implements AfterViewInit {
       }
       if (this.showBorders) {
         this.loadBordersInView();
+      }
+    });
+
+    // Add click event listener for feature info
+    this.map.on('click', (evt) => {
+      const feature = this.map.forEachFeatureAtPixel(evt.pixel, (feature) => feature);
+      
+      if (feature && this.popup) {
+        const properties = feature.getProperties();
+        const content = this.formatFeatureInfo(properties);
+        
+        const popupElement = document.getElementById('popup-content');
+        if (popupElement) {
+          popupElement.innerHTML = content;
+        }
+        
+        this.popup.setPosition(evt.coordinate);
+      } else if (this.popup) {
+        this.popup.setPosition(undefined);
+      }
+    });
+
+    // Change cursor on hover
+    this.map.on('pointermove', (evt) => {
+      if (evt.dragging) {
+        return;
+      }
+      const pixel = this.map.getEventPixel(evt.originalEvent);
+      const hit = this.map.forEachFeatureAtPixel(pixel, () => true);
+      const target = this.map.getTargetElement();
+      if (target) {
+        target.style.cursor = hit ? 'pointer' : '';
       }
     });
   }
@@ -393,6 +450,56 @@ this.rasterLayer.on('postrender', (evt) => {
   private boundsContains(outer: [number, number, number, number], inner: number[]): boolean {
     return outer[0] <= inner[0] && outer[1] <= inner[1] && 
            outer[2] >= inner[2] && outer[3] >= inner[3];
+  }
+
+  private setupPopup(): void {
+    const popupElement = document.getElementById('popup');
+    if (popupElement) {
+      this.popup = new Overlay({
+        element: popupElement,
+        autoPan: {
+          animation: {
+            duration: 250,
+          },
+        },
+      });
+      this.map.addOverlay(this.popup);
+
+      // Close popup when clicking the close button
+      const closer = document.getElementById('popup-closer');
+      if (closer) {
+        closer.onclick = () => {
+          if (this.popup) {
+            this.popup.setPosition(undefined);
+          }
+          closer.blur();
+          return false;
+        };
+      }
+    }
+  }
+
+  private formatFeatureInfo(properties: any): string {
+    const excludeKeys = ['geometry', 'boundedBy'];
+    let html = '<table style="width: 100%;">';
+    
+    let c = 3
+    for (const key in properties) {
+      if (excludeKeys.includes(key) || typeof properties[key] === 'object') {
+        continue;
+      }
+      
+      const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      html += `<tr><td style="padding: 4px 8px; font-weight: bold;">${displayKey}:</td><td style="padding: 4px 8px;">${properties[key]}</td></tr>`;
+    
+      c--;
+      if (c <= 0) {
+        break;
+      }
+    }
+    
+    html += '</table>';
+    return html;
   }
 
   // =========================
