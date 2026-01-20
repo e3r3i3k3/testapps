@@ -10,32 +10,18 @@ import TileWMS from 'ol/source/TileWMS';
 import GeoJSON from 'ol/format/GeoJSON';
 import { Style, Stroke, Fill } from 'ol/style';
 import { fromLonLat, transformExtent } from 'ol/proj';
-import { GeoServerService } from '../../GeoServer.service';
+import { GeoServerService, RasterLayerSource, VectorLayerSource } from '../../GeoServer.service';
 import Overlay from 'ol/Overlay';
 import RasterSource from 'ol/source/Raster.js';
 import VectorTileLayer from 'ol/layer/VectorTile';
 import VectorTileSource from 'ol/source/VectorTile.js';
 
 import MVT from 'ol/format/MVT.js';
-import {get as getProjection} from 'ol/proj.js';
+import { get as getProjection } from 'ol/proj.js';
 import Icon from 'ol/style/Icon.js';
 import Text from 'ol/style/Text.js';
 import TileGrid from 'ol/tilegrid/TileGrid.js';
 
-// does not work
-//const url1 = 'http://localhost:8081/geoserver/ibf-system/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&FORMAT=application/vnd.mapbox-vector-tile&TRANSPARENT=true&LAYERS=ne_110m_admin_0_boundary_lines_land&SRS=EPSG:900913&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}';
-//const url1roads = 'http://localhost:8081/geoserver/ibf-system/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&FORMAT=application/vnd.mapbox-vector-tile&TRANSPARENT=true&LAYERS=roads&SRS=EPSG:900913&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}';
-//works
-// be sure to match the tilematrix set (EPSG:900913, 	EPSG:404000, etc.)
-const url2 = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:ne_110m_admin_0_boundary_lines_land&STYLE=&TILEMATRIX=EPSG:900913:{z}&TILEMATRIXSET=EPSG:900913&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
-const url2roadsnew = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:gis_osm_roads_free_1&STYLE=&TILEMATRIX=EPSG:900913:{z}&TILEMATRIXSET=EPSG:900913&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
-
-// gis_osm_roads_free_1
-// does not work
-//const url2roads = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:roads&STYLE=&TILEMATRIX=EPSG:404000:{z}&TILEMATRIXSET=EPSG:404000&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
-// does not work
-//const url3 = 'http://localhost:8081/geoserver/ibf-system/wms?service=WMS&request=GetMap&layers=ne_110m_admin_0_boundary_lines_land&bbox={bbox-epsg-3857}&width=256&height=256&srs=EPSG:900913&format=application/vnd.mapbox-vector-tile';
-//const url3roads = 'http://localhost:8081/geoserver/ibf-system/wms?service=WMS&request=GetMap&layers=roads&bbox={bbox-epsg-3857}&width=256&height=256&srs=EPSG:900913&format=application/vnd.mapbox-vector-tile';
 
 
 const mapSources = [
@@ -69,12 +55,17 @@ export class Layers implements AfterViewInit {
   private baseLayer!: TileLayer<XYZ>;
   private roadsLayer?: VectorLayer<VectorSource>;
   private bordersLayer?: VectorLayer<VectorSource>;
-  private rasterLayer?: TileLayer<TileWMS>;
+  private rasterLayerEth?: TileLayer<TileWMS>;
+  private rasterLayerUga1?: TileLayer<TileWMS>;
+  private rasterLayerUga2?: TileLayer<TileWMS>;
   private popup?: Overlay;
   selection = 2;
   showRoads = false;
   showBorders = false;
-  showRasterLayer = false;
+  showRasterLayerEth = false;
+  showRasterLayerUga1 = false;
+  showRasterLayerUga2 = false;
+
   private minZoomForRoads = 10;
   borderColor = '#00ff00';
 
@@ -117,16 +108,35 @@ export class Layers implements AfterViewInit {
         attributions:
           'WWWWWWWWWWWW',
         format: new MVT(),
-                url: url2,
+        url: this.geoServerService.getMvtUrl(VectorLayerSource.CountryBorders),
       }),
       style: new Style({
-            stroke: new Stroke({ color: this.borderColor, width: 4 }),
-            fill: new Fill({ color: this.borderColor + '80' })
-          })
+        stroke: new Stroke({ color: this.borderColor, width: 4 }),
+        fill: new Fill({ color: this.borderColor + '80' })
+      })
       //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
     });
-  
-    // Add borders layer
+
+    const builMVT = new VectorTileLayer({
+      declutter: true,
+        minZoom: 12, // Only show at zoom 10 and higher
+        maxZoom: 20, // Hide at zoom levels above 20
+      source: new VectorTileSource({
+
+        attributions:
+          'WbbbbWW',
+
+        format: new MVT(),
+        url: this.geoServerService.getMvtUrl(VectorLayerSource.UgandaBuildings),
+      }),
+      style: new Style({
+        stroke: new Stroke({ color: this.borderColor, width: 1 }),
+        fill: new Fill({ color: '#0088FF80' })
+      })
+      //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
+    });
+
+    // Add uganda roads layer
     const roadsMVT = new VectorTileLayer({
       declutter: true,
       minZoom: 10, // Only show at zoom 10 and higher
@@ -135,26 +145,26 @@ export class Layers implements AfterViewInit {
         attributions:
           'FFFFFFFFFFF',
         format: new MVT(),
-                url: url2roadsnew,
+        url: this.geoServerService.getMvtUrl(VectorLayerSource.UgandaRoads),
       }),
       style: (feature) => {
-            const highway = feature.get('fclass');
-            let color = '#ff00ea';
-            let width = 1.5;
-            
-            switch (highway) {
-              case 'motorway': color = '#e74c3c'; width = 4; break;
-              case 'primary': color = '#e67e22'; width = 3; break;
-              case 'secondary': color = '#5900d5'; width = 2.5; break;
-              case 'tertiary': color = '#1500ff'; width = 2; break;
-              case 'unclassified': color = '#0ae675ff'; width = 2; break;
-              case 'track': color = 'rgb(255, 204, 0)'; width = 2; break;
-            }
-            
-            return new Style({
-              stroke: new Stroke({ color, width })
-            });
-          }
+        const highway = feature.get('fclass');
+        let color = '#ff00ea';
+        let width = 1.5;
+
+        switch (highway) {
+          case 'motorway': color = '#e74c3c'; width = 4; break;
+          case 'primary': color = '#e67e22'; width = 3; break;
+          case 'secondary': color = '#5900d5'; width = 2.5; break;
+          case 'tertiary': color = '#1500ff'; width = 2; break;
+          case 'unclassified': color = '#0ae675ff'; width = 2; break;
+          case 'track': color = 'rgb(255, 204, 0)'; width = 2; break;
+        }
+
+        return new Style({
+          stroke: new Stroke({ color, width })
+        });
+      }
       /*
       style: new Style({
             stroke: new Stroke({ color: '#FF00FFFF', width: 2 })
@@ -165,8 +175,9 @@ export class Layers implements AfterViewInit {
     this.map.addLayer(borderMVT);
 
     this.map.addLayer(roadsMVT);
+    this.map.addLayer(builMVT);
 
-    
+
   }
 
   changeMapSource(index: number): void {
@@ -183,7 +194,7 @@ export class Layers implements AfterViewInit {
         maxZoom: 19
       })
     });
-    
+
     this.map.getLayers().insertAt(0, this.baseLayer);
   }
 
@@ -200,16 +211,16 @@ export class Layers implements AfterViewInit {
     // Add click event listener for feature info
     this.map.on('click', (evt) => {
       const feature = this.map.forEachFeatureAtPixel(evt.pixel, (feature) => feature);
-      
+
       if (feature && this.popup) {
         const properties = feature.getProperties();
         const content = this.formatFeatureInfo(properties);
-        
+
         const popupElement = document.getElementById('popup-content');
         if (popupElement) {
           popupElement.innerHTML = content;
         }
-        
+
         this.popup.setPosition(evt.coordinate);
       } else if (this.popup) {
         this.popup.setPosition(undefined);
@@ -230,24 +241,49 @@ export class Layers implements AfterViewInit {
     });
   }
 
-  toggleRasterLayer(): void {
-    this.showRasterLayer = !this.showRasterLayer;
-    if (this.showRasterLayer) {
-      this.addGeoServerRasterLayer();
+  toggleRasterLayerEth(): void {
+    this.showRasterLayerEth = !this.showRasterLayerEth;
+    if (this.showRasterLayerEth) {
+      this.rasterLayerEth = this.addGeoServerRasterLayer(RasterLayerSource.Eth11Flood);
     } else {
-      if (this.rasterLayer) {
-        this.map.removeLayer(this.rasterLayer);
-        this.rasterLayer = undefined;
+      if (this.rasterLayerEth) {
+        this.map.removeLayer(this.rasterLayerEth);
+        this.rasterLayerEth = undefined;
       }
     }
   }
 
-  private addGeoServerRasterLayer(): void {
-    this.rasterLayer = new TileLayer({
+  toggleRasterLayerUga1(): void {
+    this.showRasterLayerUga1 = !this.showRasterLayerUga1;
+    if (this.showRasterLayerUga1) {
+      this.rasterLayerUga1 = this.addGeoServerRasterLayer(RasterLayerSource.UgaFlood);
+    } else {
+      if (this.rasterLayerUga1) {
+        this.map.removeLayer(this.rasterLayerUga1);
+        this.rasterLayerUga1 = undefined;
+      }
+    }
+  }
+  toggleRasterLayerUga2(): void {
+    this.showRasterLayerUga2 = !this.showRasterLayerUga2;
+    if (this.showRasterLayerUga2) {
+      this.rasterLayerUga2 = this.addGeoServerRasterLayer(RasterLayerSource.UgaRain);
+    } else {
+      if (this.rasterLayerUga2) {
+        this.map.removeLayer(this.rasterLayerUga2);
+        this.rasterLayerUga2 = undefined;
+      }
+    }
+  }
+
+
+
+  private addGeoServerRasterLayer(layerSource: RasterLayerSource): TileLayer<TileWMS> {
+    const layer = new TileLayer({
       source: new TileWMS({
         url: geoserverUrl,
         params: {
-          'LAYERS': 'ibf-system:flood_extent_11-hour_ETH',
+          'LAYERS': layerSource,
           'TILED': true
         },
         serverType: 'geoserver',
@@ -257,24 +293,25 @@ export class Layers implements AfterViewInit {
       opacity: 1
     });
 
-// beforeoperations prerender postrender
-this.rasterLayer.on('prerender', (evt) => {
-  // return
-  if (evt.context) {
-    const context = evt.context as CanvasRenderingContext2D;
-    context.filter = 'grayscale(80%) invert(100%) ';
-    context.globalCompositeOperation = 'source-over';
-  }
-});
+    // beforeoperations prerender postrender
+    layer.on('prerender', (evt) => {
+      // return
+      if (evt.context) {
+        const context = evt.context as CanvasRenderingContext2D;
+        context.filter = 'grayscale(80%) invert(100%) ';
+        context.globalCompositeOperation = 'source-over';
+      }
+    });
 
-this.rasterLayer.on('postrender', (evt) => {
-  if (evt.context) {
-    const context = evt.context as CanvasRenderingContext2D;
-    context.filter = 'none';
-  }
-});
+    layer.on('postrender', (evt) => {
+      if (evt.context) {
+        const context = evt.context as CanvasRenderingContext2D;
+        context.filter = 'none';
+      }
+    });
 
-    this.map.addLayer(this.rasterLayer);
+    this.map.addLayer(layer);
+    return layer;
   }
 
   toggleRoads(): void {
@@ -336,7 +373,7 @@ this.rasterLayer.on('postrender', (evt) => {
     ).subscribe({
       next: (geojson) => {
         console.log(`Loaded ${geojson.features.length} road features`);
-        
+
         if (this.roadsLayer) {
           this.map.removeLayer(this.roadsLayer);
         }
@@ -355,7 +392,7 @@ this.rasterLayer.on('postrender', (evt) => {
             const highway = feature.get('highway');
             let color = '#ff00ea';
             let width = 1.5;
-            
+
             switch (highway) {
               case 'motorway': color = '#e74c3c'; width = 4; break;
               case 'primary': color = '#e67e22'; width = 3; break;
@@ -364,13 +401,13 @@ this.rasterLayer.on('postrender', (evt) => {
               case 'unclassified': color = '#0ae675ff'; width = 2; break;
               case 'track': color = 'rgb(255, 204, 0)'; width = 2; break;
             }
-            
+
             return new Style({
               stroke: new Stroke({ color, width })
             });
           }
         });
-        
+
         this.map.addLayer(this.roadsLayer);
       },
       error: (error) => {
@@ -403,7 +440,7 @@ this.rasterLayer.on('postrender', (evt) => {
     ).subscribe({
       next: (geojson) => {
         console.log(`Loaded ${geojson.features.length} border features`);
-        
+
         if (this.bordersLayer) {
           this.map.removeLayer(this.bordersLayer);
         }
@@ -423,7 +460,7 @@ this.rasterLayer.on('postrender', (evt) => {
             fill: new Fill({ color: this.borderColor + '80' })
           })
         });
-        
+
         this.map.addLayer(this.bordersLayer);
       },
       error: (error) => {
@@ -433,9 +470,9 @@ this.rasterLayer.on('postrender', (evt) => {
   }
 
   randomizeColor(): void {
-    const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+    const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
     this.borderColor = randomColor;
-    
+
     if (this.bordersLayer) {
       this.map.removeLayer(this.bordersLayer);
       this.bordersLayer = undefined;
@@ -445,11 +482,11 @@ this.rasterLayer.on('postrender', (evt) => {
       this.loadBordersInView();
     }
   }
-  
+
 
   private boundsContains(outer: [number, number, number, number], inner: number[]): boolean {
-    return outer[0] <= inner[0] && outer[1] <= inner[1] && 
-           outer[2] >= inner[2] && outer[3] >= inner[3];
+    return outer[0] <= inner[0] && outer[1] <= inner[1] &&
+      outer[2] >= inner[2] && outer[3] >= inner[3];
   }
 
   private setupPopup(): void {
@@ -482,22 +519,22 @@ this.rasterLayer.on('postrender', (evt) => {
   private formatFeatureInfo(properties: any): string {
     const excludeKeys = ['geometry', 'boundedBy'];
     let html = '<table style="width: 100%;">';
-    
+
     let c = 3
     for (const key in properties) {
       if (excludeKeys.includes(key) || typeof properties[key] === 'object') {
         continue;
       }
-      
+
       const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       html += `<tr><td style="padding: 4px 8px; font-weight: bold;">${displayKey}:</td><td style="padding: 4px 8px;">${properties[key]}</td></tr>`;
-    
+
       c--;
       if (c <= 0) {
         break;
       }
     }
-    
+
     html += '</table>';
     return html;
   }
