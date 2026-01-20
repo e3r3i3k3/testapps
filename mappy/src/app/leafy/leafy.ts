@@ -313,7 +313,7 @@ export class Leafy implements AfterViewInit {
     const expandedNE = expandedBounds.getNorthEast();
 
     // Fetch buildings within expanded bounding box
-    this.geoServerService.getBuildingsInBoundingBox(
+    this.geoServerService.getBordersInBoundingBox(
       expandedSW.lng,  // minLon
       expandedSW.lat,  // minLat
       expandedNE.lng,  // maxLon

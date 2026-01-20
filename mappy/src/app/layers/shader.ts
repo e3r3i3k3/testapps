@@ -146,6 +146,17 @@ raster.on('beforeoperations', function (event) {
         data[id] = Number(controls.get(id));
     }
 });
+
+
+/*
+
+Notes
+https://stackoverflow.com/questions/46505559/openlayers-mvt-layers-and-setting-a-style
+ol.layer.VectorTile does not listen for style changes on features, because it is optimized to work with sources 
+that have ol.render.Feature features instead of ol.Feature. So whenever you change feature styles, you have to call huclayer.changed() 
+to trigger a re-render with the updated styles.
+
+*/
 /*
 const map = new Map({
     layers: [

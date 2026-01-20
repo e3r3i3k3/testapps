@@ -31,7 +31,7 @@ export class GeoServerService {
         return this.http.get(this.wfsUrl, { params });
     }
 
-    getBuildingsInBoundingBox(
+    getBordersInBoundingBox(
         minLon: number,
         minLat: number,
         maxLon: number,

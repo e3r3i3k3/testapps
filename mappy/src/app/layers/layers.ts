@@ -12,6 +12,29 @@ import { Style, Stroke, Fill } from 'ol/style';
 import { fromLonLat, transformExtent } from 'ol/proj';
 import { GeoServerService } from '../../GeoServer.service';
 import RasterSource from 'ol/source/Raster.js';
+import VectorTileLayer from 'ol/layer/VectorTile';
+import VectorTileSource from 'ol/source/VectorTile.js';
+
+import MVT from 'ol/format/MVT.js';
+import {get as getProjection} from 'ol/proj.js';
+import Icon from 'ol/style/Icon.js';
+import Text from 'ol/style/Text.js';
+import TileGrid from 'ol/tilegrid/TileGrid.js';
+
+// does not work
+const url1 = 'http://localhost:8081/geoserver/ibf-system/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&FORMAT=application/vnd.mapbox-vector-tile&TRANSPARENT=true&LAYERS=ne_110m_admin_0_boundary_lines_land&SRS=EPSG:900913&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}';
+const url1roads = 'http://localhost:8081/geoserver/ibf-system/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&FORMAT=application/vnd.mapbox-vector-tile&TRANSPARENT=true&LAYERS=roads&SRS=EPSG:900913&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}';
+//works
+// be sure to match the tilematrix set (EPSG:900913, 	EPSG:404000, etc.)
+const url2 = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:ne_110m_admin_0_boundary_lines_land&STYLE=&TILEMATRIX=EPSG:900913:{z}&TILEMATRIXSET=EPSG:900913&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
+const url2roadsnew = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:gis_osm_roads_free_1&STYLE=&TILEMATRIX=EPSG:900913:{z}&TILEMATRIXSET=EPSG:900913&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
+
+// gis_osm_roads_free_1
+// does not work
+const url2roads = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:roads&STYLE=&TILEMATRIX=EPSG:404000:{z}&TILEMATRIXSET=EPSG:404000&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
+// does not work
+const url3 = 'http://localhost:8081/geoserver/ibf-system/wms?service=WMS&request=GetMap&layers=ne_110m_admin_0_boundary_lines_land&bbox={bbox-epsg-3857}&width=256&height=256&srs=EPSG:900913&format=application/vnd.mapbox-vector-tile';
+const url3roads = 'http://localhost:8081/geoserver/ibf-system/wms?service=WMS&request=GetMap&layers=roads&bbox={bbox-epsg-3857}&width=256&height=256&srs=EPSG:900913&format=application/vnd.mapbox-vector-tile';
 
 const mapSources = [
   'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -43,20 +66,20 @@ export class Layers implements AfterViewInit {
   private map!: Mapp;
   private baseLayer!: TileLayer<XYZ>;
   private roadsLayer?: VectorLayer<VectorSource>;
-  private buildingsLayer?: VectorLayer<VectorSource>;
+  private bordersLayer?: VectorLayer<VectorSource>;
   private rasterLayer?: TileLayer<TileWMS>;
   selection = 2;
   showRoads = false;
-  showBuildings = false;
+  showBorders = false;
   showRasterLayer = false;
   private minZoomForRoads = 10;
-  buildingColor = '#00ff00';
+  borderColor = '#00ff00';
 
   // Caching
   private loadedBounds?: [number, number, number, number];
   private cachedRoads: any[] = [];
-  private loadedBuildingsBounds?: [number, number, number, number];
-  private cachedBuildings: any[] = [];
+  private loadedBordersBounds?: [number, number, number, number];
+  private cachedBorders: any[] = [];
 
   constructor(private geoServerService: GeoServerService) { }
 
@@ -82,6 +105,43 @@ export class Layers implements AfterViewInit {
         zoom: 8
       })
     });
+
+    // Add borders layer
+    const borderMVT = new VectorTileLayer({
+      declutter: true,
+      source: new VectorTileSource({
+        attributions:
+          'WWWWWWWWWWWW',
+        format: new MVT(),
+                url: url2,
+      }),
+      style: new Style({
+            stroke: new Stroke({ color: this.borderColor, width: 4 }),
+            fill: new Fill({ color: this.borderColor + '80' })
+          })
+      //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
+    });
+  
+    // Add borders layer
+    const roadsMVT = new VectorTileLayer({
+      declutter: true,
+      source: new VectorTileSource({
+        attributions:
+          'FFFFFFFFFFF',
+        format: new MVT(),
+                url: url2roadsnew,
+      }),
+      style: new Style({
+            stroke: new Stroke({ color: '#FF00FFFF', width: 2 })
+          })
+      //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
+    });
+
+    this.map.addLayer(borderMVT);
+
+    this.map.addLayer(roadsMVT);
+
+    
   }
 
   changeMapSource(index: number): void {
@@ -107,8 +167,8 @@ export class Layers implements AfterViewInit {
       if (this.showRoads) {
         this.loadRoadsInView();
       }
-      if (this.showBuildings) {
-        this.loadBuildingsInView();
+      if (this.showBorders) {
+        this.loadBordersInView();
       }
     });
   }
@@ -178,14 +238,14 @@ this.rasterLayer.on('postrender', (evt) => {
     }
   }
 
-  toggleBuildings(): void {
-    this.showBuildings = !this.showBuildings;
-    if (this.showBuildings) {
-      this.loadBuildingsInView();
+  toggleBorders(): void {
+    this.showBorders = !this.showBorders;
+    if (this.showBorders) {
+      this.loadBordersInView();
     } else {
-      if (this.buildingsLayer) {
-        this.map.removeLayer(this.buildingsLayer);
-        this.buildingsLayer = undefined;
+      if (this.bordersLayer) {
+        this.map.removeLayer(this.bordersLayer);
+        this.bordersLayer = undefined;
       }
     }
   }
@@ -262,12 +322,12 @@ this.rasterLayer.on('postrender', (evt) => {
     });
   }
 
-  private loadBuildingsInView(): void {
+  private loadBordersInView(): void {
     const extent = this.map.getView().calculateExtent(this.map.getSize());
     const wgs84Extent = transformExtent(extent, 'EPSG:3857', 'EPSG:4326');
 
-    if (this.buildingsLayer && this.loadedBuildingsBounds && this.boundsContains(this.loadedBuildingsBounds, wgs84Extent)) {
-      console.log('Using cached buildings');
+    if (this.bordersLayer && this.loadedBordersBounds && this.boundsContains(this.loadedBordersBounds, wgs84Extent)) {
+      console.log('Using cached borders');
       return;
     }
 
@@ -279,19 +339,19 @@ this.rasterLayer.on('postrender', (evt) => {
       wgs84Extent[3] + (wgs84Extent[3] - wgs84Extent[1]) * buffer
     ];
 
-    this.loadedBuildingsBounds = expandedBounds;
+    this.loadedBordersBounds = expandedBounds;
 
-    this.geoServerService.getBuildingsInBoundingBox(
+    this.geoServerService.getBordersInBoundingBox(
       expandedBounds[0], expandedBounds[1], expandedBounds[2], expandedBounds[3]
     ).subscribe({
       next: (geojson) => {
-        console.log(`Loaded ${geojson.features.length} building features`);
+        console.log(`Loaded ${geojson.features.length} border features`);
         
-        if (this.buildingsLayer) {
-          this.map.removeLayer(this.buildingsLayer);
+        if (this.bordersLayer) {
+          this.map.removeLayer(this.bordersLayer);
         }
 
-        this.cachedBuildings = geojson.features;
+        this.cachedBorders = geojson.features;
 
         const vectorSource = new VectorSource({
           features: new GeoJSON().readFeatures(geojson, {
@@ -299,33 +359,33 @@ this.rasterLayer.on('postrender', (evt) => {
           })
         });
 
-        this.buildingsLayer = new VectorLayer({
+        this.bordersLayer = new VectorLayer({
           source: vectorSource,
           style: new Style({
-            stroke: new Stroke({ color: this.buildingColor, width: 2 }),
-            fill: new Fill({ color: this.buildingColor + '80' })
+            stroke: new Stroke({ color: this.borderColor, width: 2 }),
+            fill: new Fill({ color: this.borderColor + '80' })
           })
         });
         
-        this.map.addLayer(this.buildingsLayer);
+        this.map.addLayer(this.bordersLayer);
       },
       error: (error) => {
-        console.error('Error loading buildings:', error);
+        console.error('Error loading borders:', error);
       }
     });
   }
 
   randomizeColor(): void {
     const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
-    this.buildingColor = randomColor;
+    this.borderColor = randomColor;
     
-    if (this.buildingsLayer) {
-      this.map.removeLayer(this.buildingsLayer);
-      this.buildingsLayer = undefined;
+    if (this.bordersLayer) {
+      this.map.removeLayer(this.bordersLayer);
+      this.bordersLayer = undefined;
     }
 
-    if (this.showBuildings) {
-      this.loadBuildingsInView();
+    if (this.showBorders) {
+      this.loadBordersInView();
     }
   }
   
