@@ -276,6 +276,27 @@ export class Layers implements AfterViewInit {
     }
   }
 
+  // must be applied before adding the layer to the map
+  private ApplyRasterColoring(layer : TileLayer): void {
+
+        // beforeoperations prerender postrender
+    layer.on('prerender', (evt) => {
+      // return
+      if (evt.context) {
+        const context = evt.context as CanvasRenderingContext2D;
+        context.filter = 'grayscale(80%) invert(100%) ';
+        context.globalCompositeOperation = 'source-over';
+      }
+    });
+
+    layer.on('postrender', (evt) => {
+      if (evt.context) {
+        const context = evt.context as CanvasRenderingContext2D;
+        context.filter = 'none';
+      }
+    });
+  }
+
 
 
   private addGeoServerRasterLayer(layerSource: RasterLayerSource): TileLayer<TileWMS> {
@@ -293,22 +314,8 @@ export class Layers implements AfterViewInit {
       opacity: 1
     });
 
-    // beforeoperations prerender postrender
-    layer.on('prerender', (evt) => {
-      // return
-      if (evt.context) {
-        const context = evt.context as CanvasRenderingContext2D;
-        context.filter = 'grayscale(80%) invert(100%) ';
-        context.globalCompositeOperation = 'source-over';
-      }
-    });
-
-    layer.on('postrender', (evt) => {
-      if (evt.context) {
-        const context = evt.context as CanvasRenderingContext2D;
-        context.filter = 'none';
-      }
-    });
+    // TODO: look into this
+    //this.ApplyRasterColoring(layer);
 
     this.map.addLayer(layer);
     return layer;
