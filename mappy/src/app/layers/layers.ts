@@ -68,6 +68,8 @@ export class Layers implements AfterViewInit {
 
   private minZoomForRoads = 10;
   borderColor = '#00ff00';
+  hue = 0;
+  invert = 100;
 
   // Caching
   private loadedBounds?: [number, number, number, number];
@@ -284,7 +286,8 @@ export class Layers implements AfterViewInit {
       // return
       if (evt.context) {
         const context = evt.context as CanvasRenderingContext2D;
-        context.filter = 'grayscale(80%) invert(100%) ';
+        // context.filter = 'grayscale(80%) invert(100%) ';
+        context.filter = `hue-rotate(${this.hue}deg) invert(${this.invert}%)`;
         context.globalCompositeOperation = 'source-over';
       }
     });
@@ -314,8 +317,7 @@ export class Layers implements AfterViewInit {
       opacity: 1
     });
 
-    // TODO: look into this
-    //this.ApplyRasterColoring(layer);
+    ///this.ApplyRasterColoring(layer);
 
     this.map.addLayer(layer);
     return layer;
@@ -488,6 +490,26 @@ export class Layers implements AfterViewInit {
     if (this.showBorders) {
       this.loadBordersInView();
     }
+  }
+
+  onHueChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.hue = parseInt(input.value);
+    const output = document.getElementById('hueOut');
+    if (output) {
+      output.textContent = input.value;
+    }
+    this.map.render();
+  }
+
+  onInvertChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.invert = parseInt(input.value);
+    const output = document.getElementById('invertOut');
+    if (output) {
+      output.textContent = input.value;
+    }
+    this.map.render();
   }
 
 

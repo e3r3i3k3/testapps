@@ -125,18 +125,13 @@
       <table class="controls">
         <tr>
           <td><label for="hue">hue</label></td>
-          <td><input id="hue" type="range" min="-180" max="180" value="0" /></td>
-          <td><span id="hueOut"></span> °&nbsp;</td>
+          <td><input id="hue" type="range" min="-180" max="180" value="0" (input)="onHueChange($event)" /></td>
+          <td><span id="hueOut">0</span> °&nbsp;</td>
         </tr>
         <tr>
-          <td><label for="chroma">chroma</label></td>
-          <td><input id="chroma" type="range" min="0" max="100" value="100" /></td>
-          <td><span id="chromaOut"></span> %</td>
-        </tr>
-        <tr>
-          <td><label for="lightness">lightness</label></td>
-          <td><input id="lightness" type="range" min="0" max="100" value="100" /></td>
-          <td><span id="lightnessOut"></span> %</td>
+          <td><label for="invert">invert</label></td>
+          <td><input id="invert" type="range" min="0" max="100" value="100" (input)="onInvertChange($event)" /></td>
+          <td><span id="invertOut">100</span> %ww</td>
         </tr>
       </table>
     </div>
