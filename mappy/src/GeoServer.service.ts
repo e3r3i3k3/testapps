@@ -2,14 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-export enum RasterLayerSource {
+export enum RasterLayerIbfName {
     Eth11Flood = 'ibf-system:flood_extent_11-hour_ETH',
     UgaFlood = 'ibf-system:flood_extent_7-day_UGA',
     UgaRain = 'ibf-system:cropland_KEN'
     //'ibf-system:cropland_UGA'//'ibf-system:rainfall_forecast_11-month_UGA',
 }
 
-export enum VectorLayerSource {
+export enum VectorLayerIbfName {
     CountryBorders = 'ibf-system:ne_110m_admin_0_boundary_lines_land',
     MalawiRoads = 'ibf-system:roads',
     UgandaBuildings = 'ibf-system:gis_osm_buildings_a_free_1',
@@ -58,7 +58,7 @@ export class GeoServerService {
 
     // be sure to match the tilematrix set (EPSG:900913, 	EPSG:404000, etc.)
     // AI assisted, so check this in another source. I could not find it in the docs :/
-    getMvtUrl(layerSource: VectorLayerSource): string {
+    getMvtUrl(layerSource: VectorLayerIbfName): string {
         // also try EPSG:4326
         const format = 'EPSG:900913';
         return `http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE` +

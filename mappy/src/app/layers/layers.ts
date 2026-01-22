@@ -10,9 +10,8 @@ import TileWMS from 'ol/source/TileWMS';
 import GeoJSON from 'ol/format/GeoJSON';
 import { Style, Stroke, Fill } from 'ol/style';
 import { fromLonLat, transformExtent } from 'ol/proj';
-import { GeoServerService, RasterLayerSource, VectorLayerSource } from '../../GeoServer.service';
+import { GeoServerService, RasterLayerIbfName, VectorLayerIbfName } from '../../GeoServer.service';
 import Overlay from 'ol/Overlay';
-import RasterSource from 'ol/source/Raster.js';
 import VectorTileLayer from 'ol/layer/VectorTile';
 import VectorTileSource from 'ol/source/VectorTile.js';
 
@@ -110,7 +109,7 @@ export class Layers implements AfterViewInit {
         attributions:
           'WWWWWWWWWWWW',
         format: new MVT(),
-        url: this.geoServerService.getMvtUrl(VectorLayerSource.CountryBorders),
+        url: this.geoServerService.getMvtUrl(VectorLayerIbfName.CountryBorders),
       }),
       style: new Style({
         stroke: new Stroke({ color: this.borderColor, width: 4 }),
@@ -129,7 +128,7 @@ export class Layers implements AfterViewInit {
           'WbbbbWW',
 
         format: new MVT(),
-        url: this.geoServerService.getMvtUrl(VectorLayerSource.UgandaBuildings),
+        url: this.geoServerService.getMvtUrl(VectorLayerIbfName.UgandaBuildings),
       }),
       style: new Style({
         stroke: new Stroke({ color: this.borderColor, width: 1 }),
@@ -147,7 +146,7 @@ export class Layers implements AfterViewInit {
         attributions:
           'FFFFFFFFFFF',
         format: new MVT(),
-        url: this.geoServerService.getMvtUrl(VectorLayerSource.UgandaRoads),
+        url: this.geoServerService.getMvtUrl(VectorLayerIbfName.UgandaRoads),
       }),
       style: (feature) => {
         const highway = feature.get('fclass');
@@ -246,7 +245,7 @@ export class Layers implements AfterViewInit {
   toggleRasterLayerEth(): void {
     this.showRasterLayerEth = !this.showRasterLayerEth;
     if (this.showRasterLayerEth) {
-      this.rasterLayerEth = this.addGeoServerRasterLayer(RasterLayerSource.Eth11Flood);
+      this.rasterLayerEth = this.addGeoServerRasterLayer(RasterLayerIbfName.Eth11Flood);
     } else {
       if (this.rasterLayerEth) {
         this.map.removeLayer(this.rasterLayerEth);
@@ -258,7 +257,7 @@ export class Layers implements AfterViewInit {
   toggleRasterLayerUga1(): void {
     this.showRasterLayerUga1 = !this.showRasterLayerUga1;
     if (this.showRasterLayerUga1) {
-      this.rasterLayerUga1 = this.addGeoServerRasterLayer(RasterLayerSource.UgaFlood);
+      this.rasterLayerUga1 = this.addGeoServerRasterLayer(RasterLayerIbfName.UgaFlood);
     } else {
       if (this.rasterLayerUga1) {
         this.map.removeLayer(this.rasterLayerUga1);
@@ -269,7 +268,7 @@ export class Layers implements AfterViewInit {
   toggleRasterLayerUga2(): void {
     this.showRasterLayerUga2 = !this.showRasterLayerUga2;
     if (this.showRasterLayerUga2) {
-      this.rasterLayerUga2 = this.addGeoServerRasterLayer(RasterLayerSource.UgaRain);
+      this.rasterLayerUga2 = this.addGeoServerRasterLayer(RasterLayerIbfName.UgaRain);
     } else {
       if (this.rasterLayerUga2) {
         this.map.removeLayer(this.rasterLayerUga2);
@@ -292,6 +291,7 @@ export class Layers implements AfterViewInit {
       }
     });
 
+
     layer.on('postrender', (evt) => {
       if (evt.context) {
         const context = evt.context as CanvasRenderingContext2D;
@@ -302,7 +302,7 @@ export class Layers implements AfterViewInit {
 
 
 
-  private addGeoServerRasterLayer(layerSource: RasterLayerSource): TileLayer<TileWMS> {
+  private addGeoServerRasterLayer(layerSource: RasterLayerIbfName): TileLayer<TileWMS> {
     const layer = new TileLayer({
       source: new TileWMS({
         url: geoserverUrl,
@@ -311,7 +311,8 @@ export class Layers implements AfterViewInit {
           'TILED': true
         },
         serverType: 'geoserver',
-        transition: 0
+        transition: 0 // what is this?
+        
       }),
       // background: '#ff00ff', // No alpha support, fills map with color
       opacity: 1
