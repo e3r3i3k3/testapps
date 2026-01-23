@@ -42,6 +42,9 @@ export class SplitTest implements AfterViewInit {
     showRasterLayerUga2 = false;
     hue = 0;
     chroma = 100;
+    showRed = true;
+    showGreen = true;
+    showBlue = true;
 
     private rasterSource?: RasterSource;
 
@@ -64,22 +67,25 @@ export class SplitTest implements AfterViewInit {
                     crossOrigin: 'anonymous'
                 }),
             ],
-            operation: function (pixels, data) {
-                const hcl = rgb2hcl(pixels[0]);
+            operation: function (pixels : number[][] | ImageData[], data : any) {
 
+                /**
+                 Erik Note:
+                 Pixels[n][rgba]
+                 [n] is the layer, so you can blend multiple layers in a single draw.
+                 */
 
-                let h = hcl[0] + (Math.PI * data.hue) / 180;
-                if (h < 0) {
-                    h += twoPi;
-                } else if (h > twoPi) {
-                    h -= twoPi;
+                 //pixels[0][0] = 0; // set red channel to 0 on layer 0
+                
+                let p = pixels[0];
+
+                if (Array.isArray(p)) {
+                  if (!data.showRed) p[0] = 0;
+                  if (!data.showGreen) p[1] = 0;
+                  if (!data.showBlue) p[2] = 0;
+                  p[3] = 255; // alpha always 255
                 }
-                hcl[0] = h;
-
-                hcl[1] *= data.chroma / 100;
-                hcl[2] *= 1;
-
-                return hcl2rgb(hcl);
+                return p;
             },
             lib: {
                 rgb2hcl: rgb2hcl,
@@ -107,10 +113,13 @@ export class SplitTest implements AfterViewInit {
             })
         });
 
-        // Set up beforeoperations listener to pass hue and chroma values to the shader
+        // Set up beforeoperations listener to pass values to the shader
         this.rasterSource.on('beforeoperations', (event) => {
             event.data.hue = this.hue;
             event.data.chroma = this.chroma;
+            event.data.showRed = this.showRed;
+            event.data.showGreen = this.showGreen;
+            event.data.showBlue = this.showBlue;
         });
 
         this.map = new Mapp({
@@ -145,6 +154,21 @@ export class SplitTest implements AfterViewInit {
         if (output) {
             output.textContent = input.value;
         }
+        this.rasterSource?.changed();
+    }
+
+    toggleRed(): void {
+        this.showRed = !this.showRed;
+        this.rasterSource?.changed();
+    }
+
+    toggleGreen(): void {
+        this.showGreen = !this.showGreen;
+        this.rasterSource?.changed();
+    }
+
+    toggleBlue(): void {
+        this.showBlue = !this.showBlue;
         this.rasterSource?.changed();
     }
 
