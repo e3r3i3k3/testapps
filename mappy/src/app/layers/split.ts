@@ -15,6 +15,70 @@ import { fromLonLat } from 'ol/proj';
 import MVT from 'ol/format/MVT';
 import { Stroke, Style } from 'ol/style';
 import { hcl2rgb, lab2xyz, rgb2hcl, rgb2xyz, t0, t1, t2, t3, twoPi, Xn, xyz2lab, xyz2rgb, Yn, Zn } from './shader';
+import { set } from 'ol/transform';
+
+export function SetSingleColor(pixels: number[][] | ImageData[], data: any) {
+
+    /**
+     Erik Note:
+     Pixels[n][rgba]
+     [n] is the layer, so you can blend multiple layers in a single draw.
+     */
+
+    //pixels[0][0] = 0; // set red channel to 0 on layer 0
+
+    let p = pixels[0];
+
+    if (Array.isArray(p)) {
+        //if (!data.showRed) p[0] = 0;
+        //if (!data.showGreen) p[1] = 0;
+        //if (!data.showBlue) p[2] = 0;
+        const c = data.showRed ? p[0] : p[2];
+        p[0] = c;
+        p[1] = c;
+        p[2] = c;
+        p[3] = 255; // alpha always 255
+    }
+    return p;
+}
+
+function SplitLayers(pixels: number[][] | ImageData[], data: any) {
+
+        let p = pixels[0];
+        //const c1 = `rgb(67, 8, 122)`;
+        //const c2 = `rgb(0, 125, 84)`;
+        //const c3 = `rgb(27, 72, 253)`;
+
+        const th = data.threshold; // threshold
+        const c1 = [67, 8, 122];
+        const c2 = [0, 125, 84];
+        const c3 = [27, 72, 253];
+        let output = [0,50,100,255];
+    if (Array.isArray(p)) {
+        if (data.showRed && (p[0] > th)) {
+            output[0] += +c1[0];
+            output[1] += +c1[1];
+            output[2] += +c1[2];
+        }
+        if (data.showGreen && (p[1] > th))
+        {
+            output[0] += +c2[0];
+            output[1] += +c2[1];
+            output[2] += +c2[2];
+        }
+        if (data.showBlue && (p[2] > th))
+        {    
+            output[0] += +c3[0];
+            output[1] += +c3[1];
+            output[2] += +c3[2];
+        }
+
+        output[0] = Math.min(255, output[0]);
+        output[1] = Math.min(255, output[1]);
+        output[2] = Math.min(255, output[2]);
+    }
+    return output;
+}
 
 @Component({
     selector: 'app-layers',
@@ -42,6 +106,7 @@ export class SplitTest implements AfterViewInit {
     showRasterLayerUga2 = false;
     hue = 0;
     chroma = 100;
+    threshold = 50;
     showRed = true;
     showGreen = true;
     showBlue = true;
@@ -67,42 +132,8 @@ export class SplitTest implements AfterViewInit {
                     crossOrigin: 'anonymous'
                 }),
             ],
-            operation: function (pixels : number[][] | ImageData[], data : any) {
-
-                /**
-                 Erik Note:
-                 Pixels[n][rgba]
-                 [n] is the layer, so you can blend multiple layers in a single draw.
-                 */
-
-                 //pixels[0][0] = 0; // set red channel to 0 on layer 0
-                
-                let p = pixels[0];
-
-                if (Array.isArray(p)) {
-                  if (!data.showRed) p[0] = 0;
-                  if (!data.showGreen) p[1] = 0;
-                  if (!data.showBlue) p[2] = 0;
-                  p[3] = 255; // alpha always 255
-                }
-                return p;
-            },
-            lib: {
-                rgb2hcl: rgb2hcl,
-                hcl2rgb: hcl2rgb,
-                rgb2xyz: rgb2xyz,
-                lab2xyz: lab2xyz,
-                xyz2lab: xyz2lab,
-                xyz2rgb: xyz2rgb,
-                Xn: Xn,
-                Yn: Yn,
-                Zn: Zn,
-                t0: t0,
-                t1: t1,
-                t2: t2,
-                t3: t3,
-                twoPi: twoPi,
-            },
+            // operation: SetSingleColor,
+            operation: SplitLayers,
         });
 
         this.baseLayer = new TileLayer({
@@ -117,6 +148,7 @@ export class SplitTest implements AfterViewInit {
         this.rasterSource.on('beforeoperations', (event) => {
             event.data.hue = this.hue;
             event.data.chroma = this.chroma;
+            event.data.threshold = this.threshold;
             event.data.showRed = this.showRed;
             event.data.showGreen = this.showGreen;
             event.data.showBlue = this.showBlue;
@@ -151,6 +183,16 @@ export class SplitTest implements AfterViewInit {
         const input = event.target as HTMLInputElement;
         this.chroma = parseInt(input.value);
         const output = document.getElementById('chromaOut');
+        if (output) {
+            output.textContent = input.value;
+        }
+        this.rasterSource?.changed();
+    }
+
+    onThresholdChange(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        this.threshold = parseInt(input.value);
+        const output = document.getElementById('thresholdOut');
         if (output) {
             output.textContent = input.value;
         }

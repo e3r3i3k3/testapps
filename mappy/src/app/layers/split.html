@@ -116,6 +116,11 @@
                     <td><input id="chroma" type="range" min="0" max="200" value="100" (input)="onChromaChange($event)" /></td>
                     <td><span id="chromaOut">100</span> %</td>
                 </tr>
+                <tr>
+                    <td><label for="threshold">threshold</label></td>
+                    <td><input id="threshold" type="range" min="0" max="255" value="50" (input)="onThresholdChange($event)" /></td>
+                    <td><span id="thresholdOut">50</span></td>
+                </tr>
             </table>
         </div>
     </div>
