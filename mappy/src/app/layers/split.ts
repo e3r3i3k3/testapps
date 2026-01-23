@@ -14,14 +14,15 @@ import VectorLayer from 'ol/layer/Vector';
 import { fromLonLat } from 'ol/proj';
 import MVT from 'ol/format/MVT';
 import { Stroke, Style } from 'ol/style';
+import { hcl2rgb, lab2xyz, rgb2hcl, rgb2xyz, t0, t1, t2, t3, twoPi, Xn, xyz2lab, xyz2rgb, Yn, Zn } from './shader';
 
 @Component({
     selector: 'app-layers',
     imports: [],
-    templateUrl: './s.html',
+    templateUrl: './split.html',
     styleUrl: '../../styles.css'
 })
-export class ShaderTest implements AfterViewInit {
+export class SplitTest implements AfterViewInit {
     ngAfterViewInit(): void {
         this.initMap();
         //this.setupMapEventListeners();
@@ -147,100 +148,4 @@ export class ShaderTest implements AfterViewInit {
         this.rasterSource?.changed();
     }
 
-}
-
-/**
- * Color manipulation functions below are adapted from
- * https://github.com/d3/d3-color.
- */
-export const Xn = 0.95047;
-export const Yn = 1;
-export const Zn = 1.08883;
-export const t0 = 4 / 29;
-export const t1 = 6 / 29;
-export const t2 = 3 * t1 * t1;
-export const t3 = t1 * t1 * t1;
-export const twoPi = 2 * Math.PI;
-
-/**
- * Convert an RGB pixel into an HCL pixel.
- * @param {Array<number>} pixel A pixel in RGB space.
- * @return {Array<number>} A pixel in HCL space.
- */
-export function rgb2hcl(pixel: any) {
-    const red = rgb2xyz(pixel[0]);
-    const green = rgb2xyz(pixel[1]);
-    const blue = rgb2xyz(pixel[2]);
-
-    const x = xyz2lab(
-        (0.4124564 * red + 0.3575761 * green + 0.1804375 * blue) / Xn,
-    );
-    const y = xyz2lab(
-        (0.2126729 * red + 0.7151522 * green + 0.072175 * blue) / Yn,
-    );
-    const z = xyz2lab(
-        (0.0193339 * red + 0.119192 * green + 0.9503041 * blue) / Zn,
-    );
-
-    const l = 116 * y - 16;
-    const a = 500 * (x - y);
-    const b = 200 * (y - z);
-
-    const c = Math.sqrt(a * a + b * b);
-    let h = Math.atan2(b, a);
-    if (h < 0) {
-        h += twoPi;
-    }
-
-    pixel[0] = h;
-    pixel[1] = c;
-    pixel[2] = l;
-
-    return pixel;
-}
-
-/**
- * Convert an HCL pixel into an RGB pixel.
- * @param {Array<number>} pixel A pixel in HCL space.
- * @return {Array<number>} A pixel in RGB space.
- */
-export function hcl2rgb(pixel: any) {
-    const h = pixel[0];
-    const c = pixel[1];
-    const l = pixel[2];
-
-    const a = Math.cos(h) * c;
-    const b = Math.sin(h) * c;
-
-    let y = (l + 16) / 116;
-    let x = isNaN(a) ? y : y + a / 500;
-    let z = isNaN(b) ? y : y - b / 200;
-
-    y = Yn * lab2xyz(y);
-    x = Xn * lab2xyz(x);
-    z = Zn * lab2xyz(z);
-
-    pixel[0] = xyz2rgb(3.2404542 * x - 1.5371385 * y - 0.4985314 * z);
-    pixel[1] = xyz2rgb(-0.969266 * x + 1.8760108 * y + 0.041556 * z);
-    pixel[2] = xyz2rgb(0.0556434 * x - 0.2040259 * y + 1.0572252 * z);
-
-    return pixel;
-}
-
-export function xyz2lab(t: number) {
-    return t > t3 ? Math.pow(t, 1 / 3) : t / t2 + t0;
-}
-
-export function lab2xyz(t: number) {
-    return t > t1 ? t * t * t : t2 * (t - t0);
-}
-
-export function rgb2xyz(x: number) {
-    return (x /= 255) <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
-}
-
-export function xyz2rgb(x: number) {
-    return (
-        255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055)
-    );
 }
