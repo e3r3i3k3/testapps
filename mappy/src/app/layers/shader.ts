@@ -1,26 +1,146 @@
 
+import { AfterViewInit, Component } from '@angular/core';
+import {View} from 'ol';
+import Mapp from 'ol/Map';
+import ImageLayer from 'ol/layer/Image';
+import VectorTileLayer from 'ol/layer/VectorTile';
+import { TileWMS, XYZ } from 'ol/source';
 import RasterSource from 'ol/source/Raster.js';
 import StadiaMaps from 'ol/source/StadiaMaps.js';
+import { attributions, GeoServerService, mapSources, VectorLayerIbfName } from '../../GeoServer.service';
+import TileLayer from 'ol/layer/Tile';
+import VectorSource from 'ol/source/Vector';
+import VectorLayer from 'ol/layer/Vector';
+import { fromLonLat } from 'ol/proj';
+import MVT from 'ol/format/MVT';
+import { Stroke, Style } from 'ol/style';
+
+@Component({
+  selector: 'app-layers',
+  imports: [],
+  templateUrl: './s.html',
+  styleUrl: '../../styles.css'
+})
+export class ShaderTest implements AfterViewInit {
+  ngAfterViewInit(): void {
+    this.initMap();
+    //this.setupMapEventListeners();
+  }
+  private map!: Mapp;
+  private baseLayer!: TileLayer<XYZ>;
+  private roadsLayer?: VectorLayer<VectorSource>;
+  private bordersLayer?: VectorLayer<VectorSource>;
+  private rasterLayerEth?: TileLayer<TileWMS>;
+  private rasterLayerUga1?: TileLayer<TileWMS>;
+  private rasterLayerUga2?: TileLayer<TileWMS>;
+  selection = 2;
+  showRoads = false;
+  showBorders = false;
+  showRasterLayerEth = false;
+  showRasterLayerUga1 = false;
+  showRasterLayerUga2 = false;
+
+  private minZoomForRoads = 10;
+  borderColor = '#00ff00';
+  hue = 0;
+  invert = 100;
+
+  // Caching
+  private loadedBounds?: [number, number, number, number];
+  private cachedRoads: any[] = [];
+  private loadedBordersBounds?: [number, number, number, number];
+  private cachedBorders: any[] = [];
+
+  constructor(private geoServerService: GeoServerService) { }
+
+  private initMap(): void {
+
+const rasterS = new RasterSource({
+    sources: [
+        new XYZ({
+        url: mapSources[this.selection],
+        attributions: attributions[this.selection],
+        maxZoom: 19
+      }),
+    ],
+    operation: function (pixels, data) {
+        const hcl = rgb2hcl(pixels[0]);
+
+        let h = 60;
+        if (h < 0) {
+            h += twoPi;
+        } else if (h > twoPi) {
+            h -= twoPi;
+        }
+        hcl[0] = 1.5;
+
+        hcl[1] *= data.chroma / 100;
+        hcl[2] *= data.lightness / 100;
+
+        return hcl2rgb(hcl);
+    },
+    lib: {
+        rgb2hcl: rgb2hcl,
+        hcl2rgb: hcl2rgb,
+        rgb2xyz: rgb2xyz,
+        lab2xyz: lab2xyz,
+        xyz2lab: xyz2lab,
+        xyz2rgb: xyz2rgb,
+        Xn: Xn,
+        Yn: Yn,
+        Zn: Zn,
+        t0: t0,
+        t1: t1,
+        t2: t2,
+        t3: t3,
+        twoPi: twoPi,
+    },
+});
+
+    this.baseLayer = new TileLayer({
+      source: new XYZ({
+        url: mapSources[this.selection],
+        attributions: attributions[this.selection],
+        maxZoom: 19
+      })
+    });
+
+    this.map = new Mapp({
+          layers: [
+        new ImageLayer({
+            source: rasterS,
+        }),
+    ],
+      target: 'ol-map',
+      //layers: [this.baseLayer],
+      view: new View({
+        center: fromLonLat([40.0, 9.0]), // [longitude, latitude]
+        zoom: 8
+      })
+    });
+  }
+
+}
 
 /**
  * Color manipulation functions below are adapted from
  * https://github.com/d3/d3-color.
  */
-const Xn = 0.95047;
-const Yn = 1;
-const Zn = 1.08883;
-const t0 = 4 / 29;
-const t1 = 6 / 29;
-const t2 = 3 * t1 * t1;
-const t3 = t1 * t1 * t1;
-const twoPi = 2 * Math.PI;
+export const Xn = 0.95047;
+export const Yn = 1;
+export const Zn = 1.08883;
+export const t0 = 4 / 29;
+export const t1 = 6 / 29;
+export const t2 = 3 * t1 * t1;
+export const t3 = t1 * t1 * t1;
+export const twoPi = 2 * Math.PI;
 
 /**
  * Convert an RGB pixel into an HCL pixel.
  * @param {Array<number>} pixel A pixel in RGB space.
  * @return {Array<number>} A pixel in HCL space.
  */
-function rgb2hcl(pixel : any) {
+export function rgb2hcl(pixel: any) {
     const red = rgb2xyz(pixel[0]);
     const green = rgb2xyz(pixel[1]);
     const blue = rgb2xyz(pixel[2]);
@@ -57,7 +177,7 @@ function rgb2hcl(pixel : any) {
  * @param {Array<number>} pixel A pixel in HCL space.
  * @return {Array<number>} A pixel in RGB space.
  */
-function hcl2rgb(pixel : any) {
+export function hcl2rgb(pixel: any) {
     const h = pixel[0];
     const c = pixel[1];
     const l = pixel[2];
@@ -80,19 +200,19 @@ function hcl2rgb(pixel : any) {
     return pixel;
 }
 
-function xyz2lab(t :number) {
+export function xyz2lab(t: number) {
     return t > t3 ? Math.pow(t, 1 / 3) : t / t2 + t0;
 }
 
-function lab2xyz(t: number) {
+export function lab2xyz(t: number) {
     return t > t1 ? t * t * t : t2 * (t - t0);
 }
 
-function rgb2xyz(x: number) {
+export function rgb2xyz(x: number) {
     return (x /= 255) <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
 }
 
-function xyz2rgb(x: number) {
+export function xyz2rgb(x: number) {
     return (
         255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055)
     );
@@ -157,8 +277,7 @@ that have ol.render.Feature features instead of ol.Feature. So whenever you chan
 to trigger a re-render with the updated styles.
 
 */
-/*
-const map = new Map({
+const map = new Mapp({
     layers: [
         new ImageLayer({
             source: raster,
@@ -171,4 +290,3 @@ const map = new Map({
         maxZoom: 18,
     }),
 });
-*/

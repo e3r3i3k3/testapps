@@ -17,6 +17,31 @@ export enum VectorLayerIbfName {
     UgandaRoads = 'ibf-system:gis_osm_roads_free_1',
 }
 
+export const mapSources = [
+  'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  'https://{a-c}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+  'https://{a-d}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+  'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+  'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+];
+
+// Live
+export const liveMapSource = `
+https://ibf-test.510.global/geoserver/ibf-system/wms?service=WMS&request=GetMap&layers=ibf-system%3Apopulation_MWI&styles=&format=image%2Fpng&transparent=true&version=1.1.0&viewparams=countryCodeISO3%3AMWI&width=256&height=256&srs=EPSG%3A4326&bbox=34.80468750000001,-16.299051014581817,35.15625000000001,-15.961329081596647`
+
+export const attributions = [
+  '© OpenStreetMap contributors',
+  '© OpenStreetMap contributors, Tiles style by HOT',
+  '© OpenStreetMap, © CartoDB',
+  '© OpenStreetMap, © CartoDB',
+  '© Stamen Design, © OpenStreetMap',
+  'Tiles © Esri',
+];
+
+export const geoserverUrl = 'http://localhost:8081/geoserver/ibf-system/wms';
+
+
 /**
  * gis_osm_buildings_a_free_1	ibf-system:gis_osm_buildings_a_free_1	uganda-data		EPSG:4326
       gis_osm_landuse_a_free_1	ibf-system:gis_osm_landuse_a_free_1	uganda-data		EPSG:4326
