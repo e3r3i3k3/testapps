@@ -6,7 +6,8 @@ import { ShaderTest } from './layers/shader';
 import { SplitTest } from './layers/split';
 
 export const routes: Routes = [
-  { path: '', component: App},
+  { path: '', pathMatch: 'full', redirectTo: 'layers'},
+  { path: 'home', component: App},
   { path: 's', component: ShaderTest},
   { path: 'w', component: SplitTest},
   { path: 'leafy', component: Leafy },
