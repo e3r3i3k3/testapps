@@ -80,6 +80,49 @@ function SplitLayers(pixels: number[][] | ImageData[], data: any) {
     return output;
 }
 
+
+function SplitLayersOverlay(pixels: number[][] | ImageData[], data: any) {
+
+        let p = pixels[0];
+        //const c1 = `rgb(67, 8, 122)`;
+        //const c2 = `rgb(0, 125, 84)`;
+        //const c3 = `rgb(27, 72, 253)`;
+
+        const th = 200; // threshold
+        const c1 = [67, 8, 122];
+        const c2 = [0, 125, 84];
+        const c3 = [27, 72, 253];
+        let output = [0, 0, 0, 0];
+    if (Array.isArray(p)) {
+        if (data.showRed && (p[0] > th)) {
+            output[0] += +c1[0];
+            output[1] += +c1[1];
+            output[2] += +c1[2];
+            output[3] += p[0];
+        }
+        if (data.showGreen && (p[1] > th))
+        {
+            output[0] += +c2[0];
+            output[1] += +c2[1];
+            output[2] += +c2[2];
+            output[3] += p[1];
+        }
+        if (data.showBlue && (p[2] > th))
+        {    
+            output[0] += +c3[0];
+            output[1] += +c3[1];
+            output[2] += +c3[2];
+            output[3] += p[2];
+        }
+
+        output[0] = Math.min(255, output[0]);
+        output[1] = Math.min(255, output[1]);
+        output[2] = Math.min(255, output[2]);
+        output[3] = Math.min(255, output[3]);
+    }
+    return output;
+}
+
 @Component({
     selector: 'app-layers',
     imports: [],
@@ -295,8 +338,14 @@ export class SplitTest implements AfterViewInit {
                 crossOrigin: 'anonymous' // needed for shaders
             }),
             ],
-             operation: SetSingleColor,
-            //operation: SplitLayers,
+             //operation: SetSingleColor,
+            operation: SplitLayersOverlay,
+        });
+                // Set up beforeoperations listener to pass values to the shader
+        this.rasterSource.on('beforeoperations', (event) => {
+            event.data.showRed = this.showRed2;
+            event.data.showGreen = this.showGreen2;
+            event.data.showBlue = this.showBlue2;
         });
 
         const layer = new ImageLayer({
