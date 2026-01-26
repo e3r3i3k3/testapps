@@ -7,8 +7,8 @@ filename3 = 'hrsl_uga_pop_resized_100.tif'
 changed_filename = 'uga_cropland_aablend.tif'
 
 import rasterio
-from rasterio.warp import reproject, Resampling
 import numpy as np
+import cv2
 import os
 
 # Construct full paths
@@ -21,6 +21,7 @@ output_path = os.path.join(path, changed_filename)
 with rasterio.open(input_path) as src:
     # Read the first band of the source image
     band_data = src.read(1)
+    nodata = src.nodata if src.nodata is not None else 0
     
     # Get metadata and update for RGB output
     meta = src.meta.copy()
@@ -35,19 +36,12 @@ with rasterio.open(input_path2) as src2:
     band_data2 = src2.read(1)
 
 with rasterio.open(input_path3) as src3:
-    # Reproject filename3 to match dimensions of filename
-    #band_data3 = np.empty((band_data.shape[0], band_data.shape[1]), dtype=band_data.dtype)
-    band_data3 = src3.read(1)
+    # Read the third source image
+    raw_data3 = src3.read(1)
     
-    reproject(
-        source=rasterio.band(src3, 1),
-        destination=band_data3,
-        src_transform=src3.transform,
-        src_crs=src3.crs,
-        dst_transform=src.transform,
-        dst_crs=src.crs,
-        resampling=Resampling.nearest
-    )
+    # Resize to match dimensions of filename using cv2
+    band_data3 = cv2.resize(raw_data3, (band_data.shape[1], band_data.shape[0]), 
+                            interpolation=cv2.INTER_NEAREST).astype(band_data.dtype)
     
     rgb_data = np.zeros((3, band_data.shape[0], band_data.shape[1]), dtype=band_data.dtype)
     
