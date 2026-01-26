@@ -37,7 +37,7 @@ export function SetSingleColor(pixels: number[][] | ImageData[], data: any) {
         p[0] = c;
         p[1] = c;
         p[2] = c;
-        p[3] = 255; // alpha always 255
+        p[3] = c; // alpha always 255
     }
     return p;
 }
@@ -97,7 +97,7 @@ export class SplitTest implements AfterViewInit {
     private bordersLayer?: VectorLayer<VectorSource>;
     private rasterLayerEth?: TileLayer<TileWMS>;
     private rasterLayerUga1?: TileLayer<TileWMS>;
-    private rasterLayerUga2?: TileLayer<TileWMS>;
+    private rasterLayerUga2?: ImageLayer<RasterSource> ;
     selection = 5;
     showRoads = false;
     showBorders = false;
@@ -163,10 +163,12 @@ export class SplitTest implements AfterViewInit {
             target: 'ol-map',
             //layers: [this.baseLayer],
             view: new View({
-                center: fromLonLat([40.0, 9.0]), // [longitude, latitude]
-                zoom: 8
+                center: fromLonLat([34.0, 3.0]), // [longitude, latitude]
+                zoom: 6
             })
         });
+
+
     }
 
     onHueChange(event: Event): void {
@@ -214,6 +216,55 @@ export class SplitTest implements AfterViewInit {
         this.rasterSource?.changed();
     }
 
+    /**
+     * 
+     
+        this.rasterSource = new RasterSource({
+            sources: [
+                new XYZ({
+                    url: mapSources[this.selection],
+                    attributions: attributions[this.selection],
+                    maxZoom: 19,
+                    crossOrigin: 'anonymous'
+                }),
+            ],
+            // operation: SetSingleColor,
+            operation: SplitLayers,
+        });
+
+        this.baseLayer = new TileLayer({
+            source: new XYZ({
+                url: mapSources[this.selection],
+                attributions: attributions[this.selection],
+                maxZoom: 19
+            })
+        });
+
+        // Set up beforeoperations listener to pass values to the shader
+        this.rasterSource.on('beforeoperations', (event) => {
+            event.data.hue = this.hue;
+            event.data.chroma = this.chroma;
+            event.data.threshold = this.threshold;
+            event.data.showRed = this.showRed;
+            event.data.showGreen = this.showGreen;
+            event.data.showBlue = this.showBlue;
+        });
+
+        this.map = new Mapp({
+            layers: [
+                new ImageLayer({
+                    source: this.rasterSource,
+                }),
+            ],
+            target: 'ol-map',
+            //layers: [this.baseLayer],
+            view: new View({
+                center: fromLonLat([40.0, 9.0]), // [longitude, latitude]
+                zoom: 8
+            })
+        });
+     */
+
     toggleRasterLayerUga2(): void {
         this.showRasterLayerUga2 = !this.showRasterLayerUga2;
         if (this.showRasterLayerUga2) {
@@ -224,20 +275,32 @@ export class SplitTest implements AfterViewInit {
                 this.rasterLayerUga2 = undefined;
             }
         }
+            
     }
 
-    private addGeoServerRasterLayer(layerSource: RasterLayerIbfName): TileLayer<TileWMS> {
-        const layer = new TileLayer({
-            source: new TileWMS({
+
+
+    private addGeoServerRasterLayer(layerSource: RasterLayerIbfName): ImageLayer<RasterSource> {
+
+        this.rasterSource = new RasterSource({
+            sources: [
+                new TileWMS({
                 url: geoserverUrl,
                 params: {
                     'LAYERS': layerSource,
                     'TILED': true
                 },
                 serverType: 'geoserver',
-                transition: 0
+                transition: 0,
+                crossOrigin: 'anonymous' // needed for shaders
             }),
-            opacity: 1
+            ],
+             operation: SetSingleColor,
+            //operation: SplitLayers,
+        });
+
+        const layer = new ImageLayer({
+            source: this.rasterSource,
         });
 
         this.map.addLayer(layer);
