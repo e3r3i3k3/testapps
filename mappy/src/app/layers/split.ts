@@ -7,7 +7,7 @@ import VectorTileLayer from 'ol/layer/VectorTile';
 import { TileWMS, XYZ } from 'ol/source';
 import RasterSource from 'ol/source/Raster.js';
 import StadiaMaps from 'ol/source/StadiaMaps.js';
-import { attributions, GeoServerService, mapSources, VectorLayerIbfName } from '../../GeoServer.service';
+import { attributions, GeoServerService, geoserverUrl, mapSources, RasterLayerIbfName, VectorLayerIbfName } from '../../GeoServer.service';
 import TileLayer from 'ol/layer/Tile';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
@@ -106,7 +106,7 @@ export class SplitTest implements AfterViewInit {
     showRasterLayerUga2 = false;
     hue = 0;
     chroma = 100;
-    threshold = 50;
+    threshold = 200;
     showRed = true;
     showGreen = true;
     showBlue = true;
@@ -212,6 +212,36 @@ export class SplitTest implements AfterViewInit {
     toggleBlue(): void {
         this.showBlue = !this.showBlue;
         this.rasterSource?.changed();
+    }
+
+    toggleRasterLayerUga2(): void {
+        this.showRasterLayerUga2 = !this.showRasterLayerUga2;
+        if (this.showRasterLayerUga2) {
+            this.rasterLayerUga2 = this.addGeoServerRasterLayer(RasterLayerIbfName.UgaRain);
+        } else {
+            if (this.rasterLayerUga2) {
+                this.map.removeLayer(this.rasterLayerUga2);
+                this.rasterLayerUga2 = undefined;
+            }
+        }
+    }
+
+    private addGeoServerRasterLayer(layerSource: RasterLayerIbfName): TileLayer<TileWMS> {
+        const layer = new TileLayer({
+            source: new TileWMS({
+                url: geoserverUrl,
+                params: {
+                    'LAYERS': layerSource,
+                    'TILED': true
+                },
+                serverType: 'geoserver',
+                transition: 0
+            }),
+            opacity: 1
+        });
+
+        this.map.addLayer(layer);
+        return layer;
     }
 
 }
