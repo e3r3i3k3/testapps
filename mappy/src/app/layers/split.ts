@@ -153,6 +153,9 @@ export class SplitTest implements AfterViewInit {
     showRed = true;
     showGreen = true;
     showBlue = true;
+    showRed2 = true;
+    showGreen2 = true;
+    showBlue2 = true;
 
     private rasterSource?: RasterSource;
 
@@ -256,6 +259,21 @@ export class SplitTest implements AfterViewInit {
 
     toggleBlue(): void {
         this.showBlue = !this.showBlue;
+        this.rasterSource?.changed();
+    }
+
+    toggleRed2(): void {
+        this.showRed2 = !this.showRed2;
+        this.rasterSource?.changed();
+    }
+
+    toggleGreen2(): void {
+        this.showGreen2 = !this.showGreen2;
+        this.rasterSource?.changed();
+    }
+
+    toggleBlue2(): void {
+        this.showBlue2 = !this.showBlue2;
         this.rasterSource?.changed();
     }
 
