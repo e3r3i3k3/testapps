@@ -121,56 +121,7 @@ export class SplitTest implements AfterViewInit {
     private cachedBorders: any[] = [];
 
     constructor(private geoServerService: GeoServerService) { }
-/*
-    private initMap(): void {
 
-        this.rasterSource = new RasterSource({
-            sources: [
-                new XYZ({
-                    url: mapSources[this.selection],
-                    attributions: attributions[this.selection],
-                    maxZoom: 19,
-                    crossOrigin: 'anonymous'
-                }),
-            ],
-            // operation: SetSingleColor,
-            operation: SplitLayers,
-        });
-
-        this.baseLayer = new TileLayer({
-            source: new XYZ({
-                url: mapSources[this.selection],
-                attributions: attributions[this.selection],
-                maxZoom: 19
-            })
-        });
-
-        // Set up beforeoperations listener to pass values to the shader
-        this.rasterSource.on('beforeoperations', (event) => {
-            event.data.hue = this.hue;
-            event.data.chroma = this.chroma;
-            event.data.threshold = this.threshold;
-            event.data.showRed = this.showRed;
-            event.data.showGreen = this.showGreen;
-            event.data.showBlue = this.showBlue;
-        });
-
-        this.map = new Mapp({
-            layers: [
-                new ImageLayer({
-                    source: this.rasterSource,
-                }),
-            ],
-            target: 'ol-map',
-            //layers: [this.baseLayer],
-            view: new View({
-                center: fromLonLat([34.0, 3.0]), // [longitude, latitude]
-                zoom: 6
-            })
-        });
-
-
-    }*/
 
         private initMap(): void {
     this.baseLayer = new TileLayer({
