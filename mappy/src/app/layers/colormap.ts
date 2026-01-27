@@ -191,5 +191,42 @@ export class ColorMapTest implements AfterViewInit {
         this.rasterSource?.changed();
     }
 
+    changeMapSource(index: number): void {
+        this.selection = index;
+        
+        // Recreate the raster source with the new map source
+        this.rasterSource = new RasterSource({
+            sources: [
+                new XYZ({
+                    url: mapSources[index],
+                    attributions: attributions[index],
+                    maxZoom: 19,
+                    crossOrigin: 'anonymous'
+                }),
+            ],
+            operation: SplitLayers,
+        });
+
+        // Set up beforeoperations listener
+        this.rasterSource.on('beforeoperations', (event) => {
+            event.data.hue = this.hue;
+            event.data.chroma = this.chroma;
+            event.data.threshold = this.threshold;
+            event.data.showRed = this.showRed;
+            event.data.showGreen = this.showGreen;
+            event.data.showBlue = this.showBlue;
+        });
+
+        // Update the map layer
+        const layers = this.map.getLayers().getArray();
+        if (layers.length > 0) {
+            this.map.removeLayer(layers[0]);
+        }
+        
+        this.map.addLayer(new ImageLayer({
+            source: this.rasterSource,
+        }));
+    }
+
 
 }

@@ -147,6 +147,70 @@ export class ShaderTest implements AfterViewInit {
         this.rasterSource?.changed();
     }
 
+    changeMapSource(index: number): void {
+        this.selection = index;
+        
+        // Recreate the raster source with the new map source
+        this.rasterSource = new RasterSource({
+            sources: [
+                new XYZ({
+                    url: mapSources[index],
+                    attributions: attributions[index],
+                    maxZoom: 19,
+                    crossOrigin: 'anonymous'
+                }),
+            ],
+            operation: function (pixels, data) {
+                const hcl = rgb2hcl(pixels[0]);
+
+                let h = hcl[0] + (Math.PI * data.hue) / 180;
+                if (h < 0) {
+                    h += twoPi;
+                } else if (h > twoPi) {
+                    h -= twoPi;
+                }
+                hcl[0] = h;
+
+                hcl[1] *= data.chroma / 100;
+                hcl[2] *= 1;
+
+                return hcl2rgb(hcl);
+            },
+            lib: {
+                rgb2hcl: rgb2hcl,
+                hcl2rgb: hcl2rgb,
+                rgb2xyz: rgb2xyz,
+                lab2xyz: lab2xyz,
+                xyz2lab: xyz2lab,
+                xyz2rgb: xyz2rgb,
+                Xn: Xn,
+                Yn: Yn,
+                Zn: Zn,
+                t0: t0,
+                t1: t1,
+                t2: t2,
+                t3: t3,
+                twoPi: twoPi,
+            },
+        });
+
+        // Set up beforeoperations listener
+        this.rasterSource.on('beforeoperations', (event) => {
+            event.data.hue = this.hue;
+            event.data.chroma = this.chroma;
+        });
+
+        // Update the map layer
+        const layers = this.map.getLayers().getArray();
+        if (layers.length > 0) {
+            this.map.removeLayer(layers[0]);
+        }
+        
+        this.map.addLayer(new ImageLayer({
+            source: this.rasterSource,
+        }));
+    }
+
 }
 
 /**

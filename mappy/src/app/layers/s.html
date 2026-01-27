@@ -98,6 +98,14 @@
         <h1>Test Map</h1>
         <div id="ol-map"></div>
 
+        <div class="map-controls">
+            <button (click)="changeMapSource(0)" [class.active]="selection === 0">OpenStreetMap</button>
+            <button (click)="changeMapSource(1)" [class.active]="selection === 1">OSM HOT</button>
+            <button (click)="changeMapSource(2)" [class.active]="selection === 2">CartoDB Light</button>
+            <button (click)="changeMapSource(3)" [class.active]="selection === 3">CartoDB Dark</button>
+            <button (click)="changeMapSource(4)" [class.active]="selection === 4">Stamen Toner</button>
+            <button (click)="changeMapSource(5)" [class.active]="selection === 5">Esri World</button>
+        </div>
 
         <div class="map-controls">
             <table class="controls">
