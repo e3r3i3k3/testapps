@@ -97,7 +97,7 @@ export class Layers implements AfterViewInit {
       target: 'ol-map',
       layers: [this.baseLayer],
       view: new View({
-        center: fromLonLat([40.0, 9.0]), // [longitude, latitude]
+        center: fromLonLat([34.0, 2.0]), // [longitude, latitude]
         zoom: 8
       })
     });
