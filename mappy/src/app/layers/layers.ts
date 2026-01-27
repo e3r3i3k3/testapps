@@ -178,6 +178,9 @@ export class Layers implements AfterViewInit {
     this.map.addLayer(roadsMVT);
     this.map.addLayer(builMVT);
 
+    // Add WFS cropland layer
+    //this.addCroplandWFSLayer();
+
 
   }
 
@@ -567,6 +570,103 @@ export class Layers implements AfterViewInit {
 
     html += '</table>';
     return html;
+  }
+
+  // DEBUG to compare WFS
+  private addCroplandWFSLayer(): void {
+    const minZoomForWFS = 10;
+    
+    // Check current zoom level
+    const currentZoom = this.map.getView().getZoom() || 0;
+    
+    // Only load if already at appropriate zoom
+    if (currentZoom >= minZoomForWFS) {
+      this.loadRoadsWFSInView();
+    }
+    
+    // Listen for map movement to load roads in view
+    this.map.on('moveend', () => {
+      const zoom = this.map.getView().getZoom() || 0;
+      if (zoom >= minZoomForWFS) {
+        this.loadRoadsWFSInView();
+      }
+    });
+  }
+
+  // DEBUG to compare WFS
+  private roadsWFSLoaded = false;
+  private roadsWFSLayer?: VectorLayer<VectorSource>;
+  private loadedWFSBounds?: [number, number, number, number];
+
+  // DEBUG to compare WFS
+  private loadRoadsWFSInView(): void {
+    const zoom = this.map.getView().getZoom() || 0;
+    if (zoom < 10) {
+      return;
+    }
+
+    const extent = this.map.getView().calculateExtent(this.map.getSize());
+    const wgs84Extent = transformExtent(extent, 'EPSG:3857', 'EPSG:4326');
+
+    // Check if we already have this area loaded
+    if (this.roadsWFSLayer && this.loadedWFSBounds && this.boundsContains(this.loadedWFSBounds, wgs84Extent)) {
+      console.log('Using cached WFS roads');
+      return;
+    }
+
+    const buffer = 0.5;
+    const expandedBounds: [number, number, number, number] = [
+      wgs84Extent[0] - (wgs84Extent[2] - wgs84Extent[0]) * buffer,
+      wgs84Extent[1] - (wgs84Extent[3] - wgs84Extent[1]) * buffer,
+      wgs84Extent[2] + (wgs84Extent[2] - wgs84Extent[0]) * buffer,
+      wgs84Extent[3] + (wgs84Extent[3] - wgs84Extent[1]) * buffer
+    ];
+
+    this.loadedWFSBounds = expandedBounds;
+
+    // WFS URL for roads layer
+    const wfsUrl = 'http://localhost:8081/geoserver/ibf-system/wfs';
+    const params = new URLSearchParams({
+      service: 'WFS',
+      version: '1.0.0',
+      request: 'GetFeature',
+      typeName: 'ibf-system:gis_osm_roads_free_1',
+      outputFormat: 'application/json',
+      srsName: 'EPSG:4326',
+      bbox: `${expandedBounds[0]},${expandedBounds[1]},${expandedBounds[2]},${expandedBounds[3]},EPSG:4326`
+    });
+
+    fetch(`${wfsUrl}?${params.toString()}`)
+      .then(response => response.json())
+      .then(geojson => {
+        console.log(`Loaded ${geojson.features.length} WFS road features`);
+
+        if (this.roadsWFSLayer) {
+          this.map.removeLayer(this.roadsWFSLayer);
+        }
+
+        const vectorSource = new VectorSource({
+          features: new GeoJSON().readFeatures(geojson, {
+            featureProjection: 'EPSG:3857'
+          })
+        });
+
+        this.roadsWFSLayer = new VectorLayer({
+          source: vectorSource,
+          minZoom: 10,
+          style: new Style({
+            stroke: new Stroke({
+              color: 'magenta',
+              width: 6
+            })
+          })
+        });
+
+        this.map.addLayer(this.roadsWFSLayer);
+      })
+      .catch(error => {
+        console.error('Error loading WFS roads layer:', error);
+      });
   }
 
   // =========================
