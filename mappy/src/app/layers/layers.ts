@@ -257,7 +257,7 @@ export class Layers implements AfterViewInit {
   toggleRasterLayerUga1(): void {
     this.showRasterLayerUga1 = !this.showRasterLayerUga1;
     if (this.showRasterLayerUga1) {
-      this.rasterLayerUga1 = this.addGeoServerRasterLayer(RasterLayerIbfName.UgaFlood);
+      this.rasterLayerUga1 = this.addGeoServerRasterLayer(RasterLayerIbfName.UgaGrass);
     } else {
       if (this.rasterLayerUga1) {
         this.map.removeLayer(this.rasterLayerUga1);
@@ -268,7 +268,7 @@ export class Layers implements AfterViewInit {
   toggleRasterLayerUga2(): void {
     this.showRasterLayerUga2 = !this.showRasterLayerUga2;
     if (this.showRasterLayerUga2) {
-      this.rasterLayerUga2 = this.addGeoServerRasterLayer(RasterLayerIbfName.UgaRain);
+      this.rasterLayerUga2 = this.addGeoServerRasterLayer(RasterLayerIbfName.UgaCrop);
     } else {
       if (this.rasterLayerUga2) {
         this.map.removeLayer(this.rasterLayerUga2);

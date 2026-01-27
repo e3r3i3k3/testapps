@@ -242,7 +242,7 @@ export class SplitTest implements AfterViewInit {
     toggleRasterLayerUga2(): void {
         this.showRasterLayerUga2 = !this.showRasterLayerUga2;
         if (this.showRasterLayerUga2) {
-            this.rasterLayerUga2 = this.addGeoServerRasterLayer(RasterLayerIbfName.UgaRain);
+            this.rasterLayerUga2 = this.addGeoServerRasterLayer(RasterLayerIbfName.UgaCrop);
         } else {
             if (this.rasterLayerUga2) {
                 this.map.removeLayer(this.rasterLayerUga2);

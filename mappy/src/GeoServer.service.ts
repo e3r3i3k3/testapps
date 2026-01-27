@@ -4,9 +4,10 @@ import { Observable } from 'rxjs';
 
 export enum RasterLayerIbfName {
     Eth11Flood = 'ibf-system:flood_extent_11-hour_ETH',
-    UgaFlood = 'ibf-system:flood_extent_7-day_UGA',
-    UgaRain = 'ibf-system:cropland_UGA'
+    UgaGrass = 'ibf-system:grassland_UGA',
+    UgaCrop = 'ibf-system:cropland_UGA'
     //'ibf-system:cropland_UGA'//'ibf-system:rainfall_forecast_11-month_UGA',
+    // 'ibf-system:flood_extent_7-day_UGA',
 }
 
 export enum VectorLayerIbfName {
