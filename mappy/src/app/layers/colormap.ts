@@ -3,91 +3,62 @@ import { AfterViewInit, Component } from '@angular/core';
 import { View } from 'ol';
 import Mapp from 'ol/Map';
 import ImageLayer from 'ol/layer/Image';
-import VectorTileLayer from 'ol/layer/VectorTile';
 import { TileWMS, XYZ } from 'ol/source';
 import RasterSource from 'ol/source/Raster.js';
-import StadiaMaps from 'ol/source/StadiaMaps.js';
 import { attributions, GeoServerService, geoserverUrl, mapSources, RasterLayerIbfName, VectorLayerIbfName } from '../../GeoServer.service';
 import TileLayer from 'ol/layer/Tile';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import { fromLonLat } from 'ol/proj';
 
-export function SetSingleColor(pixels: number[][] | ImageData[], data: any) {
-
-    /**
-     Erik Note:
-     Pixels[n][rgba]
-     [n] is the layer, so you can blend multiple layers in a single draw.
-     */
-
-    //pixels[0][0] = 0; // set red channel to 0 on layer 0
-
-    let p = pixels[0];
-
-    if (Array.isArray(p)) {
-        //if (!data.showRed) p[0] = 0;
-        //if (!data.showGreen) p[1] = 0;
-        //if (!data.showBlue) p[2] = 0;
-        const c = data.showRed ? p[0] : p[2];
-        p[0] = c;
-        p[1] = c;
-        p[2] = c;
-        p[3] = c; // alpha always 255
-    }
-    return p;
-}
 
 
-function SplitLayersOverlay(pixels: number[][] | ImageData[], data: any) {
+function SplitLayers(pixels: number[][] | ImageData[], data: any) {
 
         let p = pixels[0];
-        const tc1 = `rgb(255, 185, 54)`;
-        const tc2 = `rgb(73, 255, 92)`;
-        const tc3 = `rgb(255, 131, 64)`;
+        //const c1 = `rgb(67, 8, 122)`;
+        //const c2 = `rgb(0, 125, 84)`;
+        //const c3 = `rgb(27, 72, 253)`;
 
-        const th = 200; // threshold
-        const c1 = [255, 185, 54];
-        const c2 = [73, 255, 92];
-        const c3 = [255, 131, 64];
-        let output = [0, 0, 0, 0];
+        const th = data.threshold; // threshold
+        const c1 = [67, 8, 122];
+        const c2 = [0, 125, 84];
+        const c3 = [27, 72, 253];
+        let output = [0,50,100,255];
     if (Array.isArray(p)) {
         if (data.showRed && (p[0] > th)) {
             output[0] += +c1[0];
             output[1] += +c1[1];
             output[2] += +c1[2];
-            output[3] += p[0];
         }
         if (data.showGreen && (p[1] > th))
         {
             output[0] += +c2[0];
             output[1] += +c2[1];
             output[2] += +c2[2];
-            output[3] += p[1];
         }
         if (data.showBlue && (p[2] > th))
         {    
             output[0] += +c3[0];
             output[1] += +c3[1];
             output[2] += +c3[2];
-            output[3] += p[2];
         }
 
         output[0] = Math.min(255, output[0]);
         output[1] = Math.min(255, output[1]);
         output[2] = Math.min(255, output[2]);
-        output[3] = Math.min(255, output[3]);
     }
     return output;
 }
 
+
 @Component({
     selector: 'app-layers',
     imports: [],
-    templateUrl: './split.html',
+    templateUrl: './colormap.html',
     styleUrl: '../../styles.css'
 })
-export class SplitTest implements AfterViewInit {
+export class ColorMapTest implements AfterViewInit {
     ngAfterViewInit(): void {
         this.initMap();
         //this.setupMapEventListeners();
@@ -108,6 +79,9 @@ export class SplitTest implements AfterViewInit {
     hue = 0;
     chroma = 100;
     threshold = 200;
+    showRed = true;
+    showGreen = true;
+    showBlue = true;
     showRed2 = true;
     showGreen2 = true;
     showBlue2 = true;
@@ -121,7 +95,7 @@ export class SplitTest implements AfterViewInit {
     private cachedBorders: any[] = [];
 
     constructor(private geoServerService: GeoServerService) { }
-/*
+
     private initMap(): void {
 
         this.rasterSource = new RasterSource({
@@ -170,28 +144,7 @@ export class SplitTest implements AfterViewInit {
         });
 
 
-    }*/
-
-        private initMap(): void {
-    this.baseLayer = new TileLayer({
-      source: new XYZ({
-        url: mapSources[this.selection],
-        attributions: attributions[this.selection],
-        maxZoom: 19
-      })
-    });
-
-    this.map = new Mapp({
-      target: 'ol-map',
-      layers: [this.baseLayer],
-      view: new View({
-        center: fromLonLat([40.0, 9.0]), // [longitude, latitude]
-        zoom: 8
-      })
-    });
-
-
-  }
+    }
 
     onHueChange(event: Event): void {
         const input = event.target as HTMLInputElement;
@@ -223,116 +176,20 @@ export class SplitTest implements AfterViewInit {
         this.rasterSource?.changed();
     }
 
-    toggleRed2(): void {
-        this.showRed2 = !this.showRed2;
+    toggleRed(): void {
+        this.showRed = !this.showRed;
         this.rasterSource?.changed();
     }
 
-    toggleGreen2(): void {
-        this.showGreen2 = !this.showGreen2;
+    toggleGreen(): void {
+        this.showGreen = !this.showGreen;
         this.rasterSource?.changed();
     }
 
-    toggleBlue2(): void {
-        this.showBlue2 = !this.showBlue2;
+    toggleBlue(): void {
+        this.showBlue = !this.showBlue;
         this.rasterSource?.changed();
     }
 
-    /**
-     * 
-     
-        this.rasterSource = new RasterSource({
-            sources: [
-                new XYZ({
-                    url: mapSources[this.selection],
-                    attributions: attributions[this.selection],
-                    maxZoom: 19,
-                    crossOrigin: 'anonymous'
-                }),
-            ],
-            // operation: SetSingleColor,
-            operation: SplitLayers,
-        });
-
-        this.baseLayer = new TileLayer({
-            source: new XYZ({
-                url: mapSources[this.selection],
-                attributions: attributions[this.selection],
-                maxZoom: 19
-            })
-        });
-
-        // Set up beforeoperations listener to pass values to the shader
-        this.rasterSource.on('beforeoperations', (event) => {
-            event.data.hue = this.hue;
-            event.data.chroma = this.chroma;
-            event.data.threshold = this.threshold;
-            event.data.showRed = this.showRed;
-            event.data.showGreen = this.showGreen;
-            event.data.showBlue = this.showBlue;
-        });
-
-        this.map = new Mapp({
-            layers: [
-                new ImageLayer({
-                    source: this.rasterSource,
-                }),
-            ],
-            target: 'ol-map',
-            //layers: [this.baseLayer],
-            view: new View({
-                center: fromLonLat([40.0, 9.0]), // [longitude, latitude]
-                zoom: 8
-            })
-        });
-     */
-
-    toggleRasterLayerUga2(): void {
-        this.showRasterLayerUga2 = !this.showRasterLayerUga2;
-        if (this.showRasterLayerUga2) {
-            this.rasterLayerUga2 = this.addGeoServerRasterLayer(RasterLayerIbfName.UgaRain);
-        } else {
-            if (this.rasterLayerUga2) {
-                this.map.removeLayer(this.rasterLayerUga2);
-                this.rasterLayerUga2 = undefined;
-            }
-        }
-            
-    }
-
-
-
-    private addGeoServerRasterLayer(layerSource: RasterLayerIbfName): ImageLayer<RasterSource> {
-
-        this.rasterSource = new RasterSource({
-            sources: [
-                new TileWMS({
-                url: geoserverUrl,
-                params: {
-                    'LAYERS': layerSource,
-                    'TILED': true
-                },
-                serverType: 'geoserver',
-                transition: 0,
-                crossOrigin: 'anonymous' // needed for shaders
-            }),
-            ],
-             //operation: SetSingleColor,
-            operation: SplitLayersOverlay,
-        });
-                // Set up beforeoperations listener to pass values to the shader
-        this.rasterSource.on('beforeoperations', (event) => {
-            event.data.showRed = this.showRed2;
-            event.data.showGreen = this.showGreen2;
-            event.data.showBlue = this.showBlue2;
-        });
-
-        const layer = new ImageLayer({
-            source: this.rasterSource,
-        });
-
-        this.map.addLayer(layer);
-        return layer;
-    }
 
 }
