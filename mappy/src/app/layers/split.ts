@@ -11,7 +11,7 @@ import { attributions, GeoServerService, geoserverUrl, mapSources, RasterLayerIb
 import TileLayer from 'ol/layer/Tile';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, transformExtent } from 'ol/proj';
 
 export function SetSingleColor(pixels: number[][] | ImageData[], data: any) {
 
@@ -205,6 +205,14 @@ export class SplitTest implements AfterViewInit {
 
     private addGeoServerRasterLayer(layerSource: RasterLayerIbfName): ImageLayer<RasterSource> {
 
+        // Define bounding box for Uganda in EPSG:4326 (lon/lat)
+        // You can get this from GeoServer GetCapabilities or specify manually
+        // Uganda approximate bounds: 29.5°E to 35°E, -1.5°S to 4.2°N
+        const ugandaBounds4326 = [29.5, -1.5, 35.0, 4.2]; // [minLon, minLat, maxLon, maxLat]
+        
+        // Convert to EPSG:3857 (Web Mercator) for map rendering
+        const ugandaBounds3857 = transformExtent(ugandaBounds4326, 'EPSG:4326', 'EPSG:3857');
+
         this.rasterSource = new RasterSource({
             sources: [
                 new TileWMS({
@@ -230,6 +238,8 @@ export class SplitTest implements AfterViewInit {
 
         const layer = new ImageLayer({
             source: this.rasterSource,
+            // Restrict rendering to this extent in EPSG:3857 (Web Mercator)
+            extent: ugandaBounds3857
         });
 
         this.map.addLayer(layer);
