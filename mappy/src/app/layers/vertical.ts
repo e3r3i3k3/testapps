@@ -32,7 +32,7 @@ function VerticalShade(inputs: number[][] | ImageData[], data: any): ImageData {
     const height = imageData.height;
     const pixels = imageData.data; // Uint8ClampedArray
     
-    const c1 = [133, 3, 255];
+    const c1 = [133, data.threshold, 255];
     
     // Process each pixel
     for (let i = 0; i < pixels.length; i += 4) {
@@ -77,7 +77,7 @@ export class VerticalTest implements AfterViewInit {
     showRasterLayerEth = false;
     showRasterLayerUga1 = false;
     showRasterLayerUga2 = false;
-    threshold = 200;
+    threshold = 5;
 
     private rasterSource?: RasterSource;
 

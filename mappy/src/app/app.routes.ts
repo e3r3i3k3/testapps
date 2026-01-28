@@ -20,4 +20,5 @@ export const routes: Routes = [
   { path: 'vertical', component: VerticalTest },
   { path: 'nes', component: NesTest },
   { path: 'topo', component: TopoTest },
+  { path: 'nes2', component: NesTest },
 ];

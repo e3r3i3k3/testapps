@@ -11,17 +11,7 @@ import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import { fromLonLat } from 'ol/proj';
 import { lerpC } from './vertical';
-
-export function toNesColor(value: number): number {
-    if (value <= 120) {
-        return 0;
-    }
-    if (value >= 235) {
-        return 255;
-    }
-    return 128;
-}
-
+import { toNesColor } from './nes';
 
 function NesShade(inputs: number[][] | ImageData[], data: any): ImageData {
 
@@ -52,6 +42,8 @@ function NesShade(inputs: number[][] | ImageData[], data: any): ImageData {
         }
         
 
+        
+        // Apply vertical gradient
         pixels[i] = toNesColor(pixels[i]);
         pixels[i + 1] = toNesColor(pixels[i + 1]);
         pixels[i + 2] = toNesColor(pixels[i + 2]);
@@ -61,12 +53,12 @@ function NesShade(inputs: number[][] | ImageData[], data: any): ImageData {
     return imageData;
 }
 @Component({
-    selector: 'app-nes',
+    selector: 'app-nes2',
     imports: [],
-    templateUrl: './nes.html',
+    templateUrl: './nes2.html',
     styleUrl: '../../styles.css'
 })
-export class NesTest implements AfterViewInit {
+export class Nes2Test implements AfterViewInit {
     ngAfterViewInit(): void {
         this.initMap();
         //this.setupMapEventListeners();
