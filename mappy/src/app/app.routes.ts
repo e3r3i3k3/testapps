@@ -9,6 +9,7 @@ import { VerticalTest } from './layers/vertical';
 import { NesTest } from './layers/nes';
 import { TopoTest } from './layers/topo';
 import { Nes2Test } from './layers/nes2';
+import { MaptilerTest } from './vector/maptiler';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'layers'},
@@ -22,4 +23,5 @@ export const routes: Routes = [
   { path: 'nes', component: NesTest },
   { path: 'topo', component: TopoTest },
   { path: 'nes2', component: Nes2Test },
+  { path: 'maptiler', component: MaptilerTest }
 ];
