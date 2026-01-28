@@ -8,6 +8,7 @@ import { ColorMapTest } from './layers/colormap';
 import { VerticalTest } from './layers/vertical';
 import { NesTest } from './layers/nes';
 import { TopoTest } from './layers/topo';
+import { Nes2Test } from './layers/nes2';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'layers'},
@@ -20,5 +21,5 @@ export const routes: Routes = [
   { path: 'vertical', component: VerticalTest },
   { path: 'nes', component: NesTest },
   { path: 'topo', component: TopoTest },
-  { path: 'nes2', component: NesTest },
+  { path: 'nes2', component: Nes2Test },
 ];

@@ -13,7 +13,7 @@ import { fromLonLat } from 'ol/proj';
 import { lerpC } from './vertical';
 import { toNesColor } from './nes';
 
-function NesShade(inputs: number[][] | ImageData[], data: any): ImageData {
+function NesShadePixellize(inputs: number[][] | ImageData[], data: any): ImageData {
 
     
     const imageData = inputs[0];
@@ -25,28 +25,32 @@ function NesShade(inputs: number[][] | ImageData[], data: any): ImageData {
     const height = imageData.height;
     const pixels = imageData.data; // Uint8ClampedArray
     
-    const c1 = [133, 3, 255];
 
     
     // Process each pixel
     for (let i = 0; i < pixels.length; i += 4) {
         const pixelIndex = i / 4;
         const y = Math.floor(pixelIndex / width);
-        const t = y / height; // normalized height position (0 to 1)
+        const x = pixelIndex % width;
 
         const h = data.threshold;
-        const w = data.threshold;
 
-        if (y % h != 0) {
-            continue;
+        let ii = i;
+
+        if (x % h != 0) {
+
+            ii -= 4;
+
         }
-        
+        else if (y % h != 0) {
+           ii -= width * 4;
+        }
 
         
         // Apply vertical gradient
-        pixels[i] = toNesColor(pixels[i]);
-        pixels[i + 1] = toNesColor(pixels[i + 1]);
-        pixels[i + 2] = toNesColor(pixels[i + 2]);
+        pixels[i] = toNesColor(pixels[ii]);
+        pixels[i + 1] = toNesColor(pixels[ii + 1]);
+        pixels[i + 2] = toNesColor(pixels[ii + 2]);
         pixels[i + 3] = 255; // alpha
     }
     
@@ -93,7 +97,7 @@ export class Nes2Test implements AfterViewInit {
             // operation: SetSingleColor,
 
             //operation: SplitLayers,
-            operation: NesShade,
+            operation: NesShadePixellize,
             lib: {
                 toNesColor: toNesColor
             },
