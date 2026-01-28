@@ -47,6 +47,19 @@
     .ol-popup-closer:after {
         content: "✖";
     }
+
+    button {
+        transition: all 0.3s ease;
+    }
+    button:hover {
+        background-color: #3498db !important;
+        color: white !important;
+    }
+    button.active {
+        background-color: #2980b9 !important;
+        color: white !important;
+        border-color: #2980b9 !important;
+    }
 </style>
 
 <main class="main">
@@ -57,6 +70,13 @@
                 <a href="#" id="popup-closer" class="ol-popup-closer"></a>
                 <div id="popup-content"></div>
             </div>
+        </div>
+        <div style="margin-top: 15px;">
+            <button (click)="toggleRasterLayerEth()" 
+                    [class.active]="showRasterLayerEth"
+                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer;">
+                {{ showRasterLayerEth ? 'Hide' : 'Show' }} Ethiopia Flood Layer
+            </button>
         </div>
     </div>
 </main>

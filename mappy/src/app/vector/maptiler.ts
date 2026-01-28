@@ -27,6 +27,10 @@ import Overlay from 'ol/Overlay.js';
 export class MaptilerTest implements AfterViewInit {
     private map!: Map;
     private popup!: Overlay;
+    private rasterLayerEth?: TileLayer<TileWMS>;
+    showRasterLayerEth = false;
+
+    constructor(private geoServerService: GeoServerService) { }
 
     ngAfterViewInit(): void {
         this.initMap();
@@ -116,5 +120,34 @@ export class MaptilerTest implements AfterViewInit {
         });
     }
 
+    toggleRasterLayerEth(): void {
+        this.showRasterLayerEth = !this.showRasterLayerEth;
+        if (this.showRasterLayerEth) {
+            this.rasterLayerEth = this.addGeoServerRasterLayer(RasterLayerIbfName.Eth11Flood);
+        } else {
+            if (this.rasterLayerEth) {
+                this.map.removeLayer(this.rasterLayerEth);
+                this.rasterLayerEth = undefined;
+            }
+        }
+    }
+
+    private addGeoServerRasterLayer(layerSource: RasterLayerIbfName): TileLayer<TileWMS> {
+        const layer = new TileLayer({
+            source: new TileWMS({
+                url: geoserverUrl,
+                params: {
+                    'LAYERS': layerSource,
+                    'TILED': true
+                },
+                serverType: 'geoserver',
+                transition: 0
+            }),
+            opacity: 0.7
+        });
+
+        this.map.addLayer(layer);
+        return layer;
+    }
 
 }
