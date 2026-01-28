@@ -10,17 +10,10 @@ import TileLayer from 'ol/layer/Tile';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import { fromLonLat } from 'ol/proj';
+import { lerpC } from './vertical';
 
 
-
-export function lerpC(a : number, b: number, t: number): number {
-    let output =  a + ((b - a) * t);
-    output = Math.min(255, output);
-    return output;
-}
-
-
-function VerticalShade(inputs: number[][] | ImageData[], data: any): ImageData {
+function TopoShade(inputs: number[][] | ImageData[], data: any): ImageData {
 
     
     const imageData = inputs[0];
@@ -54,12 +47,12 @@ function VerticalShade(inputs: number[][] | ImageData[], data: any): ImageData {
     return imageData;
 }
 @Component({
-    selector: 'app-vertical',
+    selector: 'app-topo',
     imports: [],
-    templateUrl: './vertical.html',
+    templateUrl: './topo.html',
     styleUrl: '../../styles.css'
 })
-export class VerticalTest implements AfterViewInit {
+export class TopoTest implements AfterViewInit {
     ngAfterViewInit(): void {
         this.initMap();
         //this.setupMapEventListeners();
@@ -101,7 +94,10 @@ export class VerticalTest implements AfterViewInit {
                 }),
             ],
             operationType: 'image', // Return ImageData instead of pixel arrays
-            operation: VerticalShade,
+            // operation: SetSingleColor,
+
+            //operation: SplitLayers,
+            operation: TopoShade,
             lib: {
                 lerpC: lerpC
             },

@@ -6,6 +6,8 @@ import { ShaderTest } from './layers/shader';
 import { SplitTest } from './layers/split';
 import { ColorMapTest } from './layers/colormap';
 import { VerticalTest } from './layers/vertical';
+import { NesTest } from './layers/nes';
+import { TopoTest } from './layers/topo';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'layers'},
@@ -16,4 +18,6 @@ export const routes: Routes = [
   { path: 'leafy', component: Leafy },
   { path: 'layers', component: Layers },
   { path: 'vertical', component: VerticalTest },
+  { path: 'nes', component: NesTest },
+  { path: 'topo', component: TopoTest },
 ];

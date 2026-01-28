@@ -10,17 +10,11 @@ import TileLayer from 'ol/layer/Tile';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import { fromLonLat } from 'ol/proj';
+import { lerpC } from './vertical';
 
 
 
-export function lerpC(a : number, b: number, t: number): number {
-    let output =  a + ((b - a) * t);
-    output = Math.min(255, output);
-    return output;
-}
-
-
-function VerticalShade(inputs: number[][] | ImageData[], data: any): ImageData {
+function NesShade(inputs: number[][] | ImageData[], data: any): ImageData {
 
     
     const imageData = inputs[0];
@@ -54,38 +48,28 @@ function VerticalShade(inputs: number[][] | ImageData[], data: any): ImageData {
     return imageData;
 }
 @Component({
-    selector: 'app-vertical',
+    selector: 'app-nes',
     imports: [],
-    templateUrl: './vertical.html',
+    templateUrl: './nes.html',
     styleUrl: '../../styles.css'
 })
-export class VerticalTest implements AfterViewInit {
+export class NesTest implements AfterViewInit {
     ngAfterViewInit(): void {
         this.initMap();
         //this.setupMapEventListeners();
     }
     private map!: Mapp;
     private baseLayer!: TileLayer<XYZ>;
-    private roadsLayer?: VectorLayer<VectorSource>;
-    private bordersLayer?: VectorLayer<VectorSource>;
-    private rasterLayerEth?: TileLayer<TileWMS>;
-    private rasterLayerUga1?: TileLayer<TileWMS>;
-    private rasterLayerUga2?: ImageLayer<RasterSource>;
     selection = 5;
     showRoads = false;
     showBorders = false;
     showRasterLayerEth = false;
     showRasterLayerUga1 = false;
     showRasterLayerUga2 = false;
-    threshold = 200;
+    threshold = 10;
 
     private rasterSource?: RasterSource;
 
-    // Caching
-    private loadedBounds?: [number, number, number, number];
-    private cachedRoads: any[] = [];
-    private loadedBordersBounds?: [number, number, number, number];
-    private cachedBorders: any[] = [];
 
     constructor(private geoServerService: GeoServerService) { }
 
@@ -101,7 +85,10 @@ export class VerticalTest implements AfterViewInit {
                 }),
             ],
             operationType: 'image', // Return ImageData instead of pixel arrays
-            operation: VerticalShade,
+            // operation: SetSingleColor,
+
+            //operation: SplitLayers,
+            operation: NesShade,
             lib: {
                 lerpC: lerpC
             },
