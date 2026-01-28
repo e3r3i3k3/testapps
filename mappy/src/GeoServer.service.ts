@@ -18,6 +18,8 @@ export enum VectorLayerIbfName {
     UgandaRoads = 'ibf-system:gis_osm_roads_free_1',
 }
 
+export const superSecretApiKey = '7b02PI5MailPcMoXxEql';
+
 export const mapSources = [
   'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png',
   'https://{a-c}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
@@ -25,6 +27,9 @@ export const mapSources = [
   'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
   'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png',
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+  'https://{a-c}.tile.opentopomap.org/{z}/{x}/{y}.png',
+  'https://api.maptiler.com/tiles/terrain-rgb-v2/{z}/{x}/{y}.webp?key=' + superSecretApiKey,
+  'https://api.maptiler.com/maps/topo-v4/style.json?key=' + superSecretApiKey,
 ];
 
 // Live

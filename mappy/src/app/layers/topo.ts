@@ -13,39 +13,61 @@ import { fromLonLat } from 'ol/proj';
 import { lerpC } from './vertical';
 
 
-function TopoShade(inputs: number[][] | ImageData[], data: any): ImageData {
+function TopoShade2(pixels: number[][] | ImageData[], data: any) {
 
-    
-    const imageData = inputs[0];
+    //const c0 = `rgb(253, 143, 40)`;
+    //const c1 = `rgb(253, 195, 70)`;
+    //const c2 = `rgb(212, 255, 95)`;
+    //const c3 = `rgb(1, 246, 30)`;
+    //const c4 = `rgb(41, 69, 255)`;
+    //const c5 = `rgb(246, 1, 246)`;
+    //const seaColor = `rgb(58, 27, 80)`;
 
-    if (imageData instanceof ImageData === false) {
-        return new ImageData(1, 1);
+    const c0 = [253, 143, 40];
+    const c1 = [253, 195, 70];
+    const c2 = [212, 255, 95];
+    const c3 = [1, 246, 30];
+    const c4 = [41, 69, 255];
+    const c5 = [246, 1, 246];
+    const seaColor = [58, 27, 80];
+
+    const colors = [c0, c1, c2, c3, c4, c5];
+
+    let pixel = pixels[0];
+    const levels = 6;
+
+    const th = data.threshold; // threshold
+    const sealevel = 100000;
+
+    let output = [22, 22, 40, 255];
+    if (Array.isArray(pixel)) {
+        if (pixel[3]) {
+
+            let height = (-sealevel + pixel[0] * 256 * 256 + pixel[1] * 256 + pixel[2]);
+            height = Math.max(0, height);
+
+            let cc = colors[0];
+
+
+            if (height < 1) {
+                cc = seaColor;
+            }
+            else {
+
+            cc = colors[0];
+            height = Math.floor(height / (500 * th));
+            let level = height % levels;
+            cc = colors[level];}
+
+            output[0] = cc[0];
+            output[1] = cc[1];
+            output[2] = cc[2];
+        }
     }
-    const width = imageData.width;
-    const height = imageData.height;
-    const pixels = imageData.data; // Uint8ClampedArray
-    
-    const c1 = [133, 3, 255];
-    
-    // Process each pixel
-    for (let i = 0; i < pixels.length; i += 4) {
-        const pixelIndex = i / 4;
-        const y = Math.floor(pixelIndex / width);
-        const t = y / height; // normalized height position (0 to 1)
-        
-        const r = pixels[i];
-        const g = pixels[i + 1];
-        const b = pixels[i + 2];
-        
-        // Apply vertical gradient
-        pixels[i] = lerpC(c1[0], r, t);
-        pixels[i + 1] = lerpC(c1[1], g, t);
-        pixels[i + 2] = lerpC(c1[2], b, t);
-        pixels[i + 3] = 255; // alpha
-    }
-    
-    return imageData;
+    return output;
 }
+
+
 @Component({
     selector: 'app-topo',
     imports: [],
@@ -64,13 +86,13 @@ export class TopoTest implements AfterViewInit {
     private rasterLayerEth?: TileLayer<TileWMS>;
     private rasterLayerUga1?: TileLayer<TileWMS>;
     private rasterLayerUga2?: ImageLayer<RasterSource>;
-    selection = 5;
+    selection = 7;
     showRoads = false;
     showBorders = false;
     showRasterLayerEth = false;
     showRasterLayerUga1 = false;
     showRasterLayerUga2 = false;
-    threshold = 200;
+    threshold = 2;
 
     private rasterSource?: RasterSource;
 
@@ -93,14 +115,11 @@ export class TopoTest implements AfterViewInit {
                     crossOrigin: 'anonymous'
                 }),
             ],
-            operationType: 'image', // Return ImageData instead of pixel arrays
+            //operationType: 'image', // Return ImageData instead of pixel arrays
             // operation: SetSingleColor,
 
             //operation: SplitLayers,
-            operation: TopoShade,
-            lib: {
-                lerpC: lerpC
-            },
+            operation: TopoShade2
         });
 
         this.baseLayer = new TileLayer({
