@@ -1,0 +1,112 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.7.0/ol.css" />
+<style>
+    #ol-map {
+        width: 1000px;
+        height: 600px;
+    }
+
+    .map-controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+
+    .map-controls button {
+        padding: 10px 20px;
+        border: 2px solid #3498db;
+        background-color: white;
+        color: #3498db;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .map-controls button:hover {
+        background-color: #3498db;
+        color: white;
+    }
+
+    .map-controls button.active {
+        background-color: #2980b9;
+        color: white;
+        border-color: #2980b9;
+    }
+
+    .ol-popup {
+        position: absolute;
+        background-color: white;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #cccccc;
+        bottom: 12px;
+        left: -50px;
+        min-width: 280px;
+        max-width: 400px;
+        font-size: 14px;
+    }
+
+    .ol-popup:after,
+    .ol-popup:before {
+        top: 100%;
+        border: solid transparent;
+        content: " ";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+    }
+
+    .ol-popup:after {
+        border-top-color: white;
+        border-width: 10px;
+        left: 48px;
+        margin-left: -10px;
+    }
+
+    .ol-popup:before {
+        border-top-color: #cccccc;
+        border-width: 11px;
+        left: 48px;
+        margin-left: -11px;
+    }
+
+    .ol-popup-closer {
+        text-decoration: none;
+        position: absolute;
+        top: 2px;
+        right: 8px;
+        font-size: 20px;
+        color: #999;
+    }
+
+    .ol-popup-closer:after {
+        content: "✖";
+    }
+
+    .ol-popup-closer:hover {
+        color: #333;
+    }
+</style>
+
+<main class="main">
+    <div class="content">
+        <h1>Test Map</h1>
+        <div id="ol-map"></div>
+
+
+        <div class="map-controls">
+            <table class="controls">
+                <tr>
+                    <td><label for="threshold">threshold</label></td>
+                    <td><input id="threshold" type="range" min="0" max="255" value="50" (input)="onThresholdChange($event)" /></td>
+                    <td><span id="thresholdOut">200</span></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</main>

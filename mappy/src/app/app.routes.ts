@@ -5,6 +5,7 @@ import { App } from './app';
 import { ShaderTest } from './layers/shader';
 import { SplitTest } from './layers/split';
 import { ColorMapTest } from './layers/colormap';
+import { VerticalTest } from './layers/vertical';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'layers'},
@@ -13,5 +14,6 @@ export const routes: Routes = [
   { path: 'w', component: SplitTest},
   { path: 't', component: ColorMapTest},
   { path: 'leafy', component: Leafy },
-  { path: 'layers', component: Layers }
+  { path: 'layers', component: Layers },
+  { path: 'vertical', component: VerticalTest },
 ];
