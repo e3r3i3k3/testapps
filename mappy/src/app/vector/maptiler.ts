@@ -83,6 +83,14 @@ export class MaptilerTest implements AfterViewInit {
         fetch(styleJson)
             .then(response => response.json())
             .then(style => {
+                console.log('Style sources:', Object.keys(style.sources || {}));
+                console.log('Available layers:', style.layers.map((l: any) => ({
+                    id: l.id,
+                    sourceLayer: l['source-layer'],
+                    type: l.type,
+                    source: l.source
+                })));
+                
                 // Modify all transportation layers to be magenta and extra wide
                 style.layers.forEach((layer: any) => {
                     if (layer['source-layer'] === 'transportation') {
@@ -91,8 +99,25 @@ export class MaptilerTest implements AfterViewInit {
                         }
                         
                         // Set line color to magenta
-                        layer.paint['line-color'] = '#FF00FF';
-                        layer.paint['line-width'] = 3;
+                        layer.paint['line-color'] = '#c3adc3';
+                        layer.paint['line-width'] = 1;
+                    }
+                });
+                
+                // Find the actual source name used by boundary layers
+                const boundaryLayer = style.layers.find((l: any) => l['source-layer'] === 'boundary');
+                const sourceName = boundaryLayer ? boundaryLayer.source : 'maptiler_planet';
+                
+                // Add custom layer for Uganda admin level 1 areas - boundary is a line layer
+                style.layers.push({
+                    'id': 'uganda-admin-1',
+                    'type': 'line',
+                    'source': sourceName,
+                    'source-layer': 'boundary',
+                    'paint': {
+                        'line-color': '#7373a2',
+                        'line-width': 1,
+                        'line-opacity': 0.8
                     }
                 });
                 
