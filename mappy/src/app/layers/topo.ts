@@ -92,7 +92,7 @@ export class TopoTest implements AfterViewInit {
     showRasterLayerEth = false;
     showRasterLayerUga1 = false;
     showRasterLayerUga2 = false;
-    threshold = 2;
+    threshold = 7;
 
     private rasterSource?: RasterSource;
 

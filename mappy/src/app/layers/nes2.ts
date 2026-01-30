@@ -75,7 +75,7 @@ export class Nes2Test implements AfterViewInit {
     showRasterLayerEth = false;
     showRasterLayerUga1 = false;
     showRasterLayerUga2 = false;
-    threshold = 1;
+    threshold = 7;
 
     private rasterSource?: RasterSource;
 

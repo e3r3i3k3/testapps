@@ -79,7 +79,7 @@ export class NesTest implements AfterViewInit {
     showRasterLayerEth = false;
     showRasterLayerUga1 = false;
     showRasterLayerUga2 = false;
-    threshold = 1;
+    threshold = 11;
 
     private rasterSource?: RasterSource;
 
