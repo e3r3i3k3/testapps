@@ -75,8 +75,33 @@ export class MaptilerTest implements AfterViewInit {
                 zoom: 1
             })
         });
+
+        // Non-edited sytle
+        //  apply(this.map, styleJson);
         
-        apply(this.map, styleJson);
+        // Fetch and customize the style
+        fetch(styleJson)
+            .then(response => response.json())
+            .then(style => {
+                // Modify all transportation layers to be magenta and extra wide
+                style.layers.forEach((layer: any) => {
+                    if (layer['source-layer'] === 'transportation') {
+                        if (!layer.paint) {
+                            layer.paint = {};
+                        }
+                        
+                        // Set line color to magenta
+                        layer.paint['line-color'] = '#FF00FF';
+                        layer.paint['line-width'] = 3;
+                    }
+                });
+                
+                // Apply the modified style
+                apply(this.map, style);
+            })
+            .catch(error => {
+                console.error('Error loading style:', error);
+            });
 
         // Add click handler
         this.map.on('click', (evt) => {
