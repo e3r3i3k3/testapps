@@ -137,16 +137,16 @@ export class Layers implements AfterViewInit {
       //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
     });
 
-    // Add uganda roads layer
-    const roadsMVT = new VectorTileLayer({
-      declutter: true,
+    // Add uganda roads layer (WFS with CQL filter for motorway and primary only)
+    const roadsWFS = new VectorLayer({
       minZoom: 10, // Only show at zoom 10 and higher
       maxZoom: 20, // Hide at zoom levels above 20
-      source: new VectorTileSource({
-        attributions:
-          'FFFFFFFFFFF',
-        format: new MVT(),
-        url: this.geoServerService.getMvtUrl(VectorLayerIbfName.UgandaRoads),
+      source: new VectorSource({
+        format: new GeoJSON(),
+        url: this.geoServerService.getWfsUrlWithFilter(
+          VectorLayerIbfName.UgandaRoads,
+          "fclass IN ('motorway','primary', 'secondary')"
+        ),
       }),
       style: (feature) => {
         const highway = feature.get('fclass');
@@ -156,26 +156,21 @@ export class Layers implements AfterViewInit {
         switch (highway) {
           case 'motorway': color = '#e74c3c'; width = 4; break;
           case 'primary': color = '#e67e22'; width = 3; break;
-          case 'secondary': color = '#5900d5'; width = 2.5; break;
+            case 'secondary': color = '#5900d5'; width = 2.5; break;
           case 'tertiary': color = '#1500ff'; width = 2; break;
           case 'unclassified': color = '#0ae675ff'; width = 2; break;
-          case 'track': color = 'rgb(255, 204, 0)'; width = 2; break;
+          case 'track': color = 'rgb(255, 204, 0)'; width = 2; break;        
         }
 
         return new Style({
           stroke: new Stroke({ color, width })
         });
       }
-      /*
-      style: new Style({
-            stroke: new Stroke({ color: '#FF00FFFF', width: 2 })
-          })*/
-      //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
     });
 
     this.map.addLayer(borderMVT);
 
-    this.map.addLayer(roadsMVT);
+    this.map.addLayer(roadsWFS);
     this.map.addLayer(builMVT);
 
     // Add WFS cropland layer

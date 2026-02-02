@@ -100,6 +100,20 @@ export class GeoServerService {
             `application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}`;
     }
 
+    getWfsUrlWithFilter(layerSource: VectorLayerIbfName, cqlFilter?: string): string {
+        let url = `${this.wfsUrl}?` +
+            `service=WFS&version=1.0.0&request=GetFeature&` +
+            `typeName=${layerSource}&` +
+            `outputFormat=application/json&` +
+            `srsName=EPSG:4326`;
+        
+        if (cqlFilter) {
+            url += `&cql_filter=${encodeURIComponent(cqlFilter)}`;
+        }
+        
+        return url;
+    }
+
     getRoadsInBoundingBox(
         minLon: number,
         minLat: number,
