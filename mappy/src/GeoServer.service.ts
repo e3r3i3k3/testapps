@@ -32,6 +32,9 @@ export const mapSources = [
   'https://api.maptiler.com/maps/topo-v4/style.json?key=' + superSecretApiKey,
 ];
 
+export const countryVectors = `https://api.maptiler.com/tiles/countries/tiles.json?key=` + superSecretApiKey; 
+export const countryVectors2 = `https://api.maptiler.com/tiles/countries/{z}/{x}/{y}.pbf?key=` + superSecretApiKey; 
+
 // Live
 export const liveMapSource = `
 https://ibf-test.510.global/geoserver/ibf-system/wms?service=WMS&request=GetMap&layers=ibf-system%3Apopulation_MWI&styles=&format=image%2Fpng&transparent=true&version=1.1.0&viewparams=countryCodeISO3%3AMWI&width=256&height=256&srs=EPSG%3A4326&bbox=34.80468750000001,-16.299051014581817,35.15625000000001,-15.961329081596647`

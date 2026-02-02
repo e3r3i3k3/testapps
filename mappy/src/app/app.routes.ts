@@ -13,6 +13,7 @@ import { MaptilerTest } from './vector/maptiler';
 import { MaptilerTest2 } from './vector/mt2';
 import { Links } from './links';
 import { TopoGLTest } from './webgl/topogl';
+import { MtCountryTest } from './vector/mtcountry';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'links'},
@@ -30,4 +31,5 @@ export const routes: Routes = [
   { path: 'mt2', component: MaptilerTest2},
   { path: 'links', component: Links },
   { path: 'topogl', component: TopoGLTest },
+  { path: 'mtcountry', component: MtCountryTest },
 ];
