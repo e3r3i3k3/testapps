@@ -44,6 +44,7 @@ export class TopoGLTest implements AfterViewInit {
         //this.setupMapEventListeners();
     }
     private map!: Mapp;
+    private webglLayer!: Layer;
     selection = 7;
     showRoads = false;
     showBorders = false;
@@ -59,7 +60,7 @@ export class TopoGLTest implements AfterViewInit {
 
     private initMap(): void {
 
-        const plainLayer = new Layer({
+        this.webglLayer = new Layer({
             opacity: 1,
             source: new Source({
                 url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -68,14 +69,14 @@ export class TopoGLTest implements AfterViewInit {
             }),
             style: {
                 variables: {
-                    threshold: 50,
+                    threshold: this.threshold,
                 },
                 color: [
                     'array',
-                    ['*', ['band', 1], 0.5],  // Red channel - half of red band for purple
+                    ['+', ['*', ['band', 1], ['/', ['var', 'threshold'], 100]], ['*', ['band', 2], ['-', 1, ['/', ['var', 'threshold'], 100]]]],  // Mix of red and green based on threshold
                     ['band', 2],              // Green channel unchanged
-                    ['*', ['band', 1], 0.5],  // Blue channel - half of red band for purple
-                    1                         // Alpha channel (normalized to 1, not 255)
+                    ['band', 3],
+                    1                         // Alpha channel
                 ],
             },
         });
@@ -83,7 +84,7 @@ export class TopoGLTest implements AfterViewInit {
         this.map = new Mapp({
             target: 'ol-map',
             layers: [
-                plainLayer
+                this.webglLayer
                 
             ],
             view: new View({
@@ -91,50 +92,6 @@ export class TopoGLTest implements AfterViewInit {
                 zoom: 0,
             }),
         });
-        /*
-        
-                this.rasterSource = new RasterSource({
-                    sources: [
-                        new XYZ({
-                            url: mapSources[this.selection],
-                            attributions: attributions[this.selection],
-                            maxZoom: 19,
-                            crossOrigin: 'anonymous'
-                        }),
-                    ],
-                    //operationType: 'image', // Return ImageData instead of pixel arrays
-                    // operation: SetSingleColor,
-        
-                    //operation: SplitLayers,
-                    operation: TopoShade2
-                });
-        
-                this.baseLayer = new TileLayer({
-                    source: new XYZ({
-                        url: mapSources[this.selection],
-                        attributions: attributions[this.selection],
-                        maxZoom: 19
-                    })
-                });
-        
-                // Set up beforeoperations listener to pass values to the shader
-                this.rasterSource.on('beforeoperations', (event) => {
-                    event.data.threshold = this.threshold;
-                });
-        
-                this.map = new Mapp({
-                    layers: [
-                        new ImageLayer({
-                            source: this.rasterSource,
-                        }),
-                    ],
-                    target: 'ol-map',
-                    //layers: [this.baseLayer],
-                    view: new View({
-                        center: fromLonLat([34.0, 3.0]), // [longitude, latitude]
-                        zoom: 6
-                    })
-                });*/
 
 
     }
@@ -148,7 +105,8 @@ export class TopoGLTest implements AfterViewInit {
         if (output) {
             output.textContent = input.value;
         }
-        this.rasterSource?.changed();
+        // Update the WebGL layer's threshold variable
+        this.webglLayer.updateStyleVariables({ threshold: this.threshold });
     }
 
 
