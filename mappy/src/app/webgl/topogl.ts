@@ -60,7 +60,7 @@ export class TopoGLTest implements AfterViewInit {
     private initMap(): void {
 
         const plainLayer = new Layer({
-            opacity: 0.6,
+            opacity: 1,
             source: new Source({
                 url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 attributions:
@@ -68,14 +68,14 @@ export class TopoGLTest implements AfterViewInit {
             }),
             style: {
                 variables: {
-                    level: 0,
+                    threshold: 50,
                 },
                 color: [
-                    'case',
-                    // use the `level` style variable to determine the color
-                    ['<=', 1, ['var', 'level']],
-                    [139, 212, 255, 1],
-                    [139, 212, 255, 0],
+                    'array',
+                    ['*', ['band', 1], 0.5],  // Red channel - half of red band for purple
+                    ['band', 2],              // Green channel unchanged
+                    ['*', ['band', 1], 0.5],  // Blue channel - half of red band for purple
+                    1                         // Alpha channel (normalized to 1, not 255)
                 ],
             },
         });
@@ -84,6 +84,7 @@ export class TopoGLTest implements AfterViewInit {
             target: 'ol-map',
             layers: [
                 plainLayer
+                
             ],
             view: new View({
                 center: [0, 0],
