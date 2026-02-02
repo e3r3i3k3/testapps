@@ -39,7 +39,7 @@ export class MaptilerTest implements AfterViewInit {
     private initMap(): void {
         const key = superSecretApiKey;
         // Options: basic-v2 (smallest), streets-v2, outdoor-v2, dataviz, topo-v4
-        const styleJson = `https://api.maptiler.com/maps/dataviz/style.json?key=${key}`;
+        const dataJson = `https://api.maptiler.com/maps/basic-v2/style.json?key=${key}`;
         
         const attribution = new Attribution({
             collapsible: false,
@@ -80,7 +80,7 @@ export class MaptilerTest implements AfterViewInit {
         //  apply(this.map, styleJson);
         
         // Fetch and customize the style
-        fetch(styleJson)
+        fetch(dataJson)
             .then(response => response.json())
             .then(style => {
                 console.log('Style sources:', Object.keys(style.sources || {}));
@@ -91,18 +91,6 @@ export class MaptilerTest implements AfterViewInit {
                     source: l.source
                 })));
                 
-                // Modify all transportation layers to be magenta and extra wide
-                style.layers.forEach((layer: any) => {
-                    if (layer['source-layer'] === 'transportation') {
-                        if (!layer.paint) {
-                            layer.paint = {};
-                        }
-                        
-                        // Set line color to magenta
-                        layer.paint['line-color'] = '#c3adc3';
-                        layer.paint['line-width'] = 1;
-                    }
-                });
                 
                 // Find the actual source name used by boundary layers
                 const boundaryLayer = style.layers.find((l: any) => l['source-layer'] === 'boundary');
@@ -110,7 +98,7 @@ export class MaptilerTest implements AfterViewInit {
                 
                 // Add custom layer for Uganda admin level 1 areas - boundary is a line layer
                 style.layers.push({
-                    'id': 'uganda-admin-1',
+                    'id': 'bbbbbb',
                     'type': 'line',
                     'source': sourceName,
                     'source-layer': 'boundary',

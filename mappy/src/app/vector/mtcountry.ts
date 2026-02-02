@@ -39,7 +39,7 @@ export class MtCountryTest implements AfterViewInit {
     private map!: Map;
     private popup!: Overlay;
     showRasterLayerEth = false;
-    selection = 5;
+    selection = 9;
     selectedCountry = 'None';
 
     vlayer!: VectorTileLayer;

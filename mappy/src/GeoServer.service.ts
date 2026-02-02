@@ -30,6 +30,7 @@ export const mapSources = [
   'https://{a-c}.tile.opentopomap.org/{z}/{x}/{y}.png',
   'https://api.maptiler.com/tiles/terrain-rgb-v2/{z}/{x}/{y}.webp?key=' + superSecretApiKey,
   'https://api.maptiler.com/maps/topo-v4/style.json?key=' + superSecretApiKey,
+  'https://api.maptiler.com/maps/dataviz-v4/{z}/{x}/{y}.png?key=' + superSecretApiKey,
 ];
 
 export const countryVectors = `https://api.maptiler.com/tiles/countries/tiles.json?key=` + superSecretApiKey; 

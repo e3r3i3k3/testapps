@@ -16,6 +16,8 @@ import { defaults as defaultControls } from 'ol/control/defaults.js';
 import 'ol/ol.css';
 import { apply } from 'ol-mapbox-style';
 import Overlay from 'ol/Overlay.js';
+import GeoJSON from 'ol/format/GeoJSON';
+import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 
 
 @Component({
@@ -39,7 +41,9 @@ export class MaptilerTest2 implements AfterViewInit {
     private initMap(): void {
         const key = superSecretApiKey;
         // Options: basic-v2 (smallest), streets-v2, outdoor-v2, dataviz, topo-v4
-        const styleJson = `https://api.maptiler.com/maps/dataviz/style.json?key=${key}`;
+        const styleJson = `https://api.maptiler.com/maps/basic-v2/style.json?key=${key}`;
+        const rcLocJson = `https://api.maptiler.com/data/019c1eeb-1338-7d60-aa4f-ecb1f4e2204e/features.json?key=${key}`;
+
         
         const attribution = new Attribution({
             collapsible: false,
@@ -91,38 +95,31 @@ export class MaptilerTest2 implements AfterViewInit {
                     source: l.source
                 })));
                 
-                // Modify all transportation layers to be magenta and extra wide
-                style.layers.forEach((layer: any) => {
-                    if (layer['source-layer'] === 'transportation') {
-                        if (!layer.paint) {
-                            layer.paint = {};
-                        }
-                        
-                        // Set line color to magenta
-                        layer.paint['line-color'] = '#c3adc3';
-                        layer.paint['line-width'] = 1;
-                    }
-                });
-                
-                // Find the actual source name used by boundary layers
-                const boundaryLayer = style.layers.find((l: any) => l['source-layer'] === 'boundary');
-                const sourceName = boundaryLayer ? boundaryLayer.source : 'maptiler_planet';
-                
-                // Add custom layer for Uganda admin level 1 areas - boundary is a line layer
-                style.layers.push({
-                    'id': 'uganda-admin-1',
-                    'type': 'line',
-                    'source': sourceName,
-                    'source-layer': 'boundary',
-                    'paint': {
-                        'line-color': '#7373a2',
-                        'line-width': 1,
-                        'line-opacity': 0.8
-                    }
-                });
                 
                 // Apply the modified style
                 apply(this.map, style);
+                
+                // Add Red Cross locations layer
+                const rcLayer = new VectorLayer({
+                    source: new VectorSource({
+                        url: rcLocJson,
+                        format: new GeoJSON(),
+                    }),
+                    style: new Style({
+                        image: new CircleStyle({
+                            radius: 6,
+                            fill: new Fill({
+                                color: '#FF1493', // Pink color
+                            }),
+                            stroke: new Stroke({
+                                color: '#C71585', // Darker pink border
+                                width: 2,
+                            }),
+                        }),
+                    }),
+                });
+                
+                this.map.addLayer(rcLayer);
             })
             .catch(error => {
                 console.error('Error loading style:', error);
