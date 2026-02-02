@@ -45,6 +45,7 @@ export class TopoGLTest implements AfterViewInit {
     }
     private map!: Mapp;
     private webglLayer!: Layer;
+    private webglLayer2!: Layer;
     selection = 7;
     showRoads = false;
     showBorders = false;
@@ -63,33 +64,90 @@ export class TopoGLTest implements AfterViewInit {
         this.webglLayer = new Layer({
             opacity: 1,
             source: new Source({
-                url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                attributions:
-                    '&#169; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors.',
+                url: mapSources[this.selection],
+                attributions: attributions[this.selection],
             }),
             style: {
                 variables: {
                     threshold: this.threshold,
+                    // Rainbow color palette (normalized 0-1)
+                    c0r: 253/255, c0g: 143/255, c0b: 40/255,
+                    c1r: 253/255, c1g: 195/255, c1b: 70/255,
+                    c2r: 212/255, c2g: 255/255, c2b: 95/255,
+                    c3r: 1/255, c3g: 246/255, c3b: 30/255,
+                    c4r: 41/255, c4g: 69/255, c4b: 255/255,
+                    c5r: 246/255, c5g: 1/255, c5b: 246/255,
+                    seaR: 58/255, seaG: 27/255, seaB: 80/255,
                 },
                 color: [
-                    'array',
-                    ['+', ['*', ['band', 1], ['/', ['var', 'threshold'], 100]], ['*', ['band', 2], ['-', 1, ['/', ['var', 'threshold'], 100]]]],  // Mix of red and green based on threshold
-                    ['band', 2],              // Green channel unchanged
-                    ['band', 3],
-                    1                         // Alpha channel
+                    'case',
+                    // Calculate height from RGB: height = -100000 + R*256*256 + G*256 + B
+                    // Bands are normalized 0-1, so multiply by 255 first
+                    ['<=',
+                        ['+',
+                            ['+',
+                                ['*', ['*', ['band', 1], 255], 65536],
+                                ['*', ['*', ['band', 2], 255], 256]
+                            ],
+                            ['*', ['band', 3], 255]
+                        ],
+                        100000
+                    ],
+                    // If height <= sealevel, use sea color
+                    ['array', ['var', 'seaR'], ['var', 'seaG'], ['var', 'seaB'], 1],
+                    
+                    // Otherwise calculate level (0-5) and select color
+                    [
+                        'match',
+                        ['%',
+                            ['floor',
+                                ['/',
+                                    ['-',
+                                        ['+',
+                                            ['+',
+                                                ['*', ['*', ['band', 1], 255], 65536],
+                                                ['*', ['*', ['band', 2], 255], 256]
+                                            ],
+                                            ['*', ['band', 3], 255]
+                                        ],
+                                        100000
+                                    ],
+                                    ['*', 500, ['var', 'threshold']]
+                                ]
+                            ],
+                            6
+                        ],
+                        0, ['array', ['var', 'c0r'], ['var', 'c0g'], ['var', 'c0b'], 1],
+                        1, ['array', ['var', 'c1r'], ['var', 'c1g'], ['var', 'c1b'], 1],
+                        2, ['array', ['var', 'c2r'], ['var', 'c2g'], ['var', 'c2b'], 1],
+                        3, ['array', ['var', 'c3r'], ['var', 'c3g'], ['var', 'c3b'], 1],
+                        4, ['array', ['var', 'c4r'], ['var', 'c4g'], ['var', 'c4b'], 1],
+                        5, ['array', ['var', 'c5r'], ['var', 'c5g'], ['var', 'c5b'], 1],
+                        ['array', ['var', 'c0r'], ['var', 'c0g'], ['var', 'c0b'], 1]
+                    ]
                 ],
             },
         });
 
+        this.webglLayer2 = new Layer({
+            opacity: 1,
+            source: new Source({
+                url: mapSources[this.selection],
+                attributions: attributions[this.selection],
+            }),
+        });
+
+
         this.map = new Mapp({
             target: 'ol-map',
             layers: [
-                this.webglLayer
+                this.webglLayer2,
+                this.webglLayer,
                 
             ],
             view: new View({
-                center: [0, 0],
-                zoom: 0,
+                center: fromLonLat([34.0, 3.0]),
+                zoom: 6,
             }),
         });
 

@@ -135,8 +135,17 @@ export class TopoTest implements AfterViewInit {
             event.data.threshold = this.threshold;
         });
 
+         const simpleLayer = new TileLayer({
+      source: new XYZ({
+        url: mapSources[this.selection],
+        attributions: attributions[this.selection],
+        maxZoom: 19
+      })
+    });
+
         this.map = new Mapp({
             layers: [
+                simpleLayer,
                 new ImageLayer({
                     source: this.rasterSource,
                 }),
