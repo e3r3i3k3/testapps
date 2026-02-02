@@ -40,6 +40,36 @@ export class MtCountryTest implements AfterViewInit {
     showRasterLayerEth = false;
     selection = 5;
 
+    vlayer!: VectorTileLayer;
+
+    vAdmin0 = new VectorTileLayer({
+        source: new VectorTile({
+            url: countryVectors2,
+            format: new MVT(),
+            maxZoom: 1,
+        }),
+
+        style: {
+            'fill-color': [255, 0, 0, 0.3],
+            'stroke-color': [255, 255, 0, 1],
+            'stroke-width': 2,
+        },
+    });
+
+    vAdmin1 = new VectorTileLayer({
+        source: new VectorTile({
+            url: countryVectors2,
+            format: new MVT(),
+            maxZoom: 4,
+        }),
+        visible: false,
+        style: {
+            'fill-color': [0, 255, 0, 0.3],
+            'stroke-color': [0, 255, 255, 1],
+            'stroke-width': 2,
+        },
+    });
+
     constructor(private geoServerService: GeoServerService) { }
 
     ngAfterViewInit(): void {
@@ -62,33 +92,7 @@ export class MtCountryTest implements AfterViewInit {
             }),
         });
 
-        const vl2 = new VectorTileLayer({
-            source: new VectorTile({
-                url: countryVectors2,
-                format: new MVT(),
-                maxZoom: 1,
-            }),
 
-            style: {
-                'fill-color': [255, 0, 0, 0.3],
-                'stroke-color': [255, 255, 0, 1],
-                'stroke-width': 2,
-            },
-        });
-        
-        const vl2admin = new VectorTileLayer({
-            source: new VectorTile({
-                url: countryVectors2,
-                format: new MVT(),
-                maxZoom: 4,
-            }),
-
-            style: {
-                'fill-color': [0, 255, 0, 0.3],
-                'stroke-color': [0, 255, 255, 1],
-                'stroke-width': 2,
-            },
-        });
 
         /*
         const source = new VectorSource({
@@ -112,8 +116,8 @@ export class MtCountryTest implements AfterViewInit {
 
             layers: [
                 baseMap,
-                vl2,
-                vl2admin,
+                this.vAdmin0,
+                this.vAdmin1,
             ],
             view: new View({
                 constrainResolution: true,
@@ -130,12 +134,18 @@ export class MtCountryTest implements AfterViewInit {
             this.map.getTargetElement().style.cursor = hit ? 'pointer' : '';
         });
 
-        // Click handler to print country information
+        // Click handler to toggle between admin0 and admin1 layers
         this.map.on('click', (evt) => {
             this.map.forEachFeatureAtPixel(evt.pixel, (feature) => {
                 const properties = feature.getProperties();
                 console.log('Clicked on country:', properties);
                 console.log('Country name:', properties['name'] || properties['NAME'] || 'Unknown');
+                
+                // Toggle between admin0 and admin1 layers
+                const admin0Visible = this.vAdmin0.getVisible();
+                this.vAdmin0.setVisible(!admin0Visible);
+                this.vAdmin1.setVisible(admin0Visible);
+                
                 return true;
             });
         });
