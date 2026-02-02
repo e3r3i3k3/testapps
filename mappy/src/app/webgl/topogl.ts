@@ -14,17 +14,8 @@ import { fromLonLat } from 'ol/proj';
 
 function TopoShade2(pixels: number[][] | ImageData[], data: any) {
 
-    //const c0 = `rgb(253, 143, 40)`;
-    //const c1 = `rgb(253, 195, 70)`;
-    //const c2 = `rgb(212, 255, 95)`;
-    //const c3 = `rgb(1, 246, 30)`;
-    //const c4 = `rgb(41, 69, 255)`;
-    //const c5 = `rgb(246, 1, 246)`;
-    //const seaColor = `rgb(58, 27, 80)`;
 
     const c0 = [253, 143, 40];
-    const c1 = [253, 195, 70];
-    const c2 = [212, 255, 95];
     let pixel = pixels[0];
 
     let output = [22, 22, 40, 255];
@@ -51,11 +42,6 @@ export class TopoGLTest implements AfterViewInit {
     }
     private map!: Mapp;
     private baseLayer!: TileLayer<XYZ>;
-    private roadsLayer?: VectorLayer<VectorSource>;
-    private bordersLayer?: VectorLayer<VectorSource>;
-    private rasterLayerEth?: TileLayer<TileWMS>;
-    private rasterLayerUga1?: TileLayer<TileWMS>;
-    private rasterLayerUga2?: ImageLayer<RasterSource>;
     selection = 7;
     showRoads = false;
     showBorders = false;
@@ -66,11 +52,6 @@ export class TopoGLTest implements AfterViewInit {
 
     private rasterSource?: RasterSource;
 
-    // Caching
-    private loadedBounds?: [number, number, number, number];
-    private cachedRoads: any[] = [];
-    private loadedBordersBounds?: [number, number, number, number];
-    private cachedBorders: any[] = [];
 
     constructor(private geoServerService: GeoServerService) { }
 
