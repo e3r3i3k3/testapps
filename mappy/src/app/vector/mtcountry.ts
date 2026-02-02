@@ -22,6 +22,7 @@ import WebGLTileLayer from 'ol/layer/WebGLTile';
 import Source from 'ol/source/ImageTile.js';
 
 import GeoJSON from 'ol/format/GeoJSON.js';
+import { Fill, Stroke, Style } from 'ol/style';
 
 import WebGLVectorLayer from 'ol/layer/WebGLVector.js';
 import MVT from 'ol/format/MVT';
@@ -39,6 +40,7 @@ export class MtCountryTest implements AfterViewInit {
     private popup!: Overlay;
     showRasterLayerEth = false;
     selection = 5;
+    selectedCountry = 'None';
 
     vlayer!: VectorTileLayer;
 
@@ -49,10 +51,18 @@ export class MtCountryTest implements AfterViewInit {
             maxZoom: 1,
         }),
 
-        style: {
-            'fill-color': [255, 0, 0, 0.3],
-            'stroke-color': [255, 255, 0, 1],
-            'stroke-width': 2,
+        style: (feature) => {
+            const iso_a2 = feature.get('iso_a2');
+            const isSelected = iso_a2 === this.selectedCountry;
+            return new Style({
+                fill: new Fill({
+                    color: isSelected ? [0, 0, 255, 0.5] : [255, 0, 0, 0.3],
+                }),
+                stroke: new Stroke({
+                    color: isSelected ? [0, 0, 255, 1] : [255, 255, 0, 1],
+                    width: 2,
+                }),
+            });
         },
     });
 
@@ -60,13 +70,21 @@ export class MtCountryTest implements AfterViewInit {
         source: new VectorTile({
             url: countryVectors2,
             format: new MVT(),
-            maxZoom: 4,
+            maxZoom: 2,
         }),
         visible: false,
-        style: {
-            'fill-color': [0, 255, 0, 0.3],
-            'stroke-color': [0, 255, 255, 1],
-            'stroke-width': 2,
+        style: (feature) => {
+            const iso_a2 = feature.get('iso_a2');
+            const isSelected = iso_a2 === this.selectedCountry;
+            return new Style({
+                fill: new Fill({
+                    color: isSelected ? [0, 0, 255, 0.5] : [0, 255, 0, 0.3],
+                }),
+                stroke: new Stroke({
+                    color: isSelected ? [0, 0, 255, 1] : [0, 255, 255, 1],
+                    width: 2,
+                }),
+            });
         },
     });
 
@@ -91,23 +109,6 @@ export class MtCountryTest implements AfterViewInit {
                 attributions: attributions[this.selection],
             }),
         });
-
-
-
-        /*
-        const source = new VectorSource({
-            url: countryVectors,
-            format: new GeoJSON(),
-        });
-
-        const vectorLayer = new WebGLVectorLayer({
-            source: source,
-            style: {
-                'fill-color': [255, 0, 0, 0.3],
-                'stroke-color': [255, 255, 0, 1],
-                'stroke-width': 2,
-            },
-        });*/
 
 
         this.map = new Map({
@@ -138,8 +139,14 @@ export class MtCountryTest implements AfterViewInit {
         this.map.on('click', (evt) => {
             this.map.forEachFeatureAtPixel(evt.pixel, (feature) => {
                 const properties = feature.getProperties();
-                console.log('Clicked on country:', properties);
-                console.log('Country name:', properties['name'] || properties['NAME'] || 'Unknown');
+                console.log('Clicked on location:', properties);
+                console.log('Name:', properties['name'] || properties['NAME'] || 'Unknown');
+                this.selectedCountry = properties['iso_a2'] || 'Unknown';
+                console.log('Selected iso_a2:', this.selectedCountry);
+                
+                // Refresh both layers to update styles
+                this.vAdmin0.changed();
+                this.vAdmin1.changed();
                 
                 // Toggle between admin0 and admin1 layers
                 const admin0Visible = this.vAdmin0.getVisible();
