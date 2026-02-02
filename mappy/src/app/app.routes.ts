@@ -10,9 +10,12 @@ import { NesTest } from './layers/nes';
 import { TopoTest } from './layers/topo';
 import { Nes2Test } from './layers/nes2';
 import { MaptilerTest } from './vector/maptiler';
+import { MaptilerTest2 } from './vector/mt2';
+import { Links } from './links';
+import { TopoGLTest } from './webgl/topogl';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'layers'},
+  { path: '', pathMatch: 'full', redirectTo: 'links'},
   { path: 'home', component: App},
   { path: 's', component: ShaderTest},
   { path: 'w', component: SplitTest},
@@ -23,5 +26,8 @@ export const routes: Routes = [
   { path: 'nes', component: NesTest },
   { path: 'topo', component: TopoTest },
   { path: 'nes2', component: Nes2Test },
-  { path: 'maptiler', component: MaptilerTest }
+  { path: 'maptiler', component: MaptilerTest },
+  { path: 'mt2', component: MaptilerTest2},
+  { path: 'links', component: Links },
+  { path: 'topogl', component: TopoGLTest },
 ];

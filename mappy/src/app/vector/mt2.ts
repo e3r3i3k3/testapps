@@ -19,12 +19,12 @@ import Overlay from 'ol/Overlay.js';
 
 
 @Component({
-    selector: 'app-maptiler',
+    selector: 'app-maptiler2',
     imports: [],
-    templateUrl: './maptiler.html',
+    templateUrl: './mt2.html',
     styleUrl: '../../styles.css'
 })
-export class MaptilerTest implements AfterViewInit {
+export class MaptilerTest2 implements AfterViewInit {
     private map!: Map;
     private popup!: Overlay;
     private rasterLayerEth?: TileLayer<TileWMS>;

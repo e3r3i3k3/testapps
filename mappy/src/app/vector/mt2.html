@@ -1,0 +1,82 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.7.0/ol.css" />
+<style>
+    #map {
+        
+        height: 600px;
+    }
+
+    .ol-popup {
+        position: absolute;
+        background-color: white;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #cccccc;
+        bottom: 12px;
+        left: -50px;
+        min-width: 200px;
+    }
+    .ol-popup:after, .ol-popup:before {
+        top: 100%;
+        border: solid transparent;
+        content: " ";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+    }
+    .ol-popup:after {
+        border-top-color: white;
+        border-width: 10px;
+        left: 48px;
+        margin-left: -10px;
+    }
+    .ol-popup:before {
+        border-top-color: #cccccc;
+        border-width: 11px;
+        left: 48px;
+        margin-left: -11px;
+    }
+    .ol-popup-closer {
+        text-decoration: none;
+        position: absolute;
+        top: 2px;
+        right: 8px;
+        cursor: pointer;
+    }
+    .ol-popup-closer:after {
+        content: "✖";
+    }
+
+    button {
+        transition: all 0.3s ease;
+    }
+    button:hover {
+        background-color: #3498db !important;
+        color: white !important;
+    }
+    button.active {
+        background-color: #2980b9 !important;
+        color: white !important;
+        border-color: #2980b9 !important;
+    }
+</style>
+
+<main class="main">
+    <div class="content">
+        <h1>Maptiler Test Map</h1>
+        <div id="map">
+            <div id="popup" class="ol-popup">
+                <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+                <div id="popup-content"></div>
+            </div>
+        </div>
+        <div style="margin-top: 15px;">
+            <button (click)="toggleRasterLayerEth()" 
+                    [class.active]="showRasterLayerEth"
+                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer;">
+                {{ showRasterLayerEth ? 'Hide' : 'Show' }} Ethiopia Flood Layer
+            </button>
+        </div>
+    </div>
+</main>
