@@ -23,15 +23,25 @@ function TopoShade2(pixels: number[][] | ImageData[], data: any) {
     //const c5 = `rgb(246, 1, 246)`;
     //const seaColor = `rgb(58, 27, 80)`;
 
+
+    //const b0 = `rgb(174, 153, 115)`;
+
+    //const b1 = `rgb(222, 187, 105)`;
+
     const c0 = [253, 143, 40];
     const c1 = [253, 195, 70];
     const c2 = [212, 255, 95];
     const c3 = [1, 246, 30];
     const c4 = [41, 69, 255];
     const c5 = [246, 1, 246];
+
+    const b0 = [174, 153, 115];
+    const b1 = [222, 187, 105];
+
     const seaColor = [58, 27, 80];
 
-    const colors = [c0, c1, c2, c3, c4, c5];
+    // const colors = [c0, c1, c2, c3, c4, c5];
+    const colors = [b0, b1, b0, b1, b0, b1];
 
     let pixel = pixels[0];
     const levels = 6;

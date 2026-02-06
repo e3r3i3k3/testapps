@@ -16,6 +16,7 @@ export enum VectorLayerIbfName {
     UgandaBuildings = 'ibf-system:gis_osm_buildings_a_free_1',
     UgandaLanduse = 'ibf-system:gis_osm_landuse_a_free_1',
     UgandaRoads = 'ibf-system:gis_osm_roads_free_1',
+    MalawiBorders = 'ibf-system:gpkgtest'
 }
 
 export const superSecretApiKey = '7b02PI5MailPcMoXxEql';
@@ -68,9 +69,9 @@ export const geoserverUrl = 'http://localhost:8081/geoserver/ibf-system/wms';
 //const url1roads = 'http://localhost:8081/geoserver/ibf-system/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&FORMAT=application/vnd.mapbox-vector-tile&TRANSPARENT=true&LAYERS=roads&SRS=EPSG:900913&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}';
 //works
 
-// Works
-const url2 = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:ne_110m_admin_0_boundary_lines_land&STYLE=&TILEMATRIX=EPSG:900913:{z}&TILEMATRIXSET=EPSG:900913&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
-const url2roadsnew = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:gis_osm_roads_free_1&STYLE=&TILEMATRIX=EPSG:900913:{z}&TILEMATRIXSET=EPSG:900913&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
+// Works (Updated for GeoServer 2.28+ - using EPSG:3857 instead of deprecated EPSG:900913)
+const url2 = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:ne_110m_admin_0_boundary_lines_land&STYLE=&TILEMATRIX=EPSG:3857:{z}&TILEMATRIXSET=EPSG:3857&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
+const url2roadsnew = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:gis_osm_roads_free_1&STYLE=&TILEMATRIX=EPSG:3857:{z}&TILEMATRIXSET=EPSG:3857&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
 
 // does not work
 //const url2roads = 'http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=ibf-system:roads&STYLE=&TILEMATRIX=EPSG:404000:{z}&TILEMATRIXSET=EPSG:404000&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}';
@@ -91,11 +92,10 @@ export class GeoServerService {
 
     // How to make a url req for mvt tiles.
 
-    // be sure to match the tilematrix set (EPSG:900913, 	EPSG:404000, etc.)
-    // AI assisted, so check this in another source. I could not find it in the docs :/
+    // be sure to match the tilematrix set (EPSG:3857, EPSG:404000, etc.)
+    // Note: EPSG:900913 is deprecated in GeoServer 2.28+, use EPSG:3857 instead
     getMvtUrl(layerSource: VectorLayerIbfName): string {
-        // also try EPSG:4326
-        const format = 'EPSG:900913';
+        const format = 'EPSG:900913'; // 4326 is the wrong projection
         return `http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE` +
             `=WMTS&VERSION=1.0.0&LAYER=${layerSource}&STYLE=&TILEMATRIX=${format}:{z}&TILEMATRIXSET=${format}&FORMAT=` +
             `application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}`;

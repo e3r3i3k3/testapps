@@ -118,6 +118,37 @@ export class Layers implements AfterViewInit {
       //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
     });
 
+      const borderWFS = new VectorLayer({
+      minZoom: 1, 
+      maxZoom: 20,
+      source: new VectorSource({
+        format: new GeoJSON(),
+        // Don't set URL here - we'll load via HttpClient to avoid CORS issues
+      }),
+      style: (feature) => {
+        let color = '#ff00ea';
+        let width = 1.5;
+
+        return new Style({
+          stroke: new Stroke({ color, width })
+        });
+      }
+    });
+
+    // Load WFS data via Angular HttpClient to handle CORS properly
+    const borderUrl = this.geoServerService.getWfsUrlWithFilter(VectorLayerIbfName.CountryBorders);
+    fetch(borderUrl)
+      .then(response => response.json())
+      .then(data => {
+        const features = new GeoJSON().readFeatures(data, {
+          featureProjection: 'EPSG:3857' // Map projection
+        });
+        borderWFS.getSource()?.addFeatures(features);
+      })
+      .catch(error => console.error('Error loading WFS borders:', error));
+
+
+/*
     const builMVT = new VectorTileLayer({
       declutter: true,
         minZoom: 12, // Only show at zoom 10 and higher
@@ -135,16 +166,50 @@ export class Layers implements AfterViewInit {
         fill: new Fill({ color: '#0088FF80' })
       })
       //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
+    });*/
+    const malawiBorderMVT = new VectorTileLayer({
+      declutter: true,
+      source: new VectorTileSource({
+        attributions:
+          'WWWWWWWWWWWW',
+        format: new MVT(),
+        url: this.geoServerService.getMvtUrl(VectorLayerIbfName.MalawiBorders),
+      }),
+      style: new Style({
+        stroke: new Stroke({ color: this.borderColor, width: 4 }),
+        fill: new Fill({ color: this.borderColor + '80' })
+      })
+      //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
     });
 
-    // Add uganda roads layer (WFS with CQL filter for motorway and primary only)
-    const roadsWFS = new VectorLayer({
-      minZoom: 10, // Only show at zoom 10 and higher
+     const malawiBorderWFS = new VectorLayer({
+      minZoom: 1, 
       maxZoom: 20, // Hide at zoom levels above 20
       source: new VectorSource({
         format: new GeoJSON(),
         url: this.geoServerService.getWfsUrlWithFilter(
-          VectorLayerIbfName.UgandaRoads,
+          VectorLayerIbfName.MalawiBorders
+        ),
+      }),
+      style: (feature) => {
+        let color = '#ff00ea';
+        let width = 1.5;
+
+        return new Style({
+          stroke: new Stroke({ color, width })
+        });
+      }
+    });
+/*
+
+    // Add uganda roads layer (WFS with CQL filter for motorway and primary only)
+    const roadsWFS = new VectorLayer({
+      minZoom: 1, // Only show at zoom 10 and higher
+      maxZoom: 20, // Hide at zoom levels above 20
+      source: new VectorSource({
+        format: new GeoJSON(),
+        url: this.geoServerService.getWfsUrlWithFilter(
+          VectorLayerIbfName.MalawiRoads,
           "fclass IN ('motorway','primary', 'secondary')"
         ),
       }),
@@ -159,7 +224,8 @@ export class Layers implements AfterViewInit {
             case 'secondary': color = '#5900d5'; width = 2.5; break;
           case 'tertiary': color = '#1500ff'; width = 2; break;
           case 'unclassified': color = '#0ae675ff'; width = 2; break;
-          case 'track': color = 'rgb(255, 204, 0)'; width = 2; break;        
+          case 'track': color = 'rgb(255, 204, 0)'; width = 2; break; 
+          default: color = '#ff00ea'; width = 2.5; break;       
         }
 
         return new Style({
@@ -168,11 +234,15 @@ export class Layers implements AfterViewInit {
       }
     });
 
-    this.map.addLayer(borderMVT);
-
     this.map.addLayer(roadsWFS);
     this.map.addLayer(builMVT);
 
+*/
+    //this.map.addLayer(malawiBorderWFS);
+    this.map.addLayer(malawiBorderMVT);
+
+    this.map.addLayer(borderMVT);
+    //this.map.addLayer(borderWFS);
     // Add WFS cropland layer
     //this.addCroplandWFSLayer();
 
@@ -309,7 +379,7 @@ export class Layers implements AfterViewInit {
           'TILED': true
         },
         serverType: 'geoserver',
-        transition: 0 // what is this?
+        transition: 0 // used for smoothing load in maybe?
         
       }),
       // background: '#ff00ff', // No alpha support, fills map with color
