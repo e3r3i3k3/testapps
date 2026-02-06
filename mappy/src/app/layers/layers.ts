@@ -167,8 +167,14 @@ export class Layers implements AfterViewInit {
       })
       //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
     });*/
+    
+    // Define Malawi's extent in EPSG:4326 (lon/lat), then transform to map projection
+    const malawiExtent4326: [number, number, number, number] = [32.6, -17.1, 35.9, -9.4];
+    const malawiExtent3857 = transformExtent(malawiExtent4326, 'EPSG:4326', 'EPSG:3857');
+    
     const malawiBorderMVT = new VectorTileLayer({
       declutter: true,
+      extent: malawiExtent3857, // Only request tiles within Malawi's bounds
       source: new VectorTileSource({
         attributions:
           'WWWWWWWWWWWW',
@@ -238,8 +244,8 @@ export class Layers implements AfterViewInit {
     this.map.addLayer(builMVT);
 
 */
-    //this.map.addLayer(malawiBorderWFS);
-    this.map.addLayer(malawiBorderMVT);
+    this.map.addLayer(malawiBorderWFS);
+    //this.map.addLayer(malawiBorderMVT);
 
     this.map.addLayer(borderMVT);
     //this.map.addLayer(borderWFS);
