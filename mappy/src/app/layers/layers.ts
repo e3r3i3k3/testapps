@@ -8,7 +8,7 @@ import XYZ from 'ol/source/XYZ';
 import VectorSource from 'ol/source/Vector';
 import TileWMS from 'ol/source/TileWMS';
 import GeoJSON from 'ol/format/GeoJSON';
-import { Style, Stroke, Fill } from 'ol/style';
+import { Style, Stroke, Fill, Circle } from 'ol/style';
 import { fromLonLat, transformExtent } from 'ol/proj';
 import { GeoServerService, RasterLayerIbfName, VectorLayerIbfName } from '../../GeoServer.service';
 import Overlay from 'ol/Overlay';
@@ -118,8 +118,8 @@ export class Layers implements AfterViewInit {
       //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
     });
 
-      const borderWFS = new VectorLayer({
-      minZoom: 1, 
+    const borderWFS = new VectorLayer({
+      minZoom: 1,
       maxZoom: 20,
       source: new VectorSource({
         format: new GeoJSON(),
@@ -148,30 +148,30 @@ export class Layers implements AfterViewInit {
       .catch(error => console.error('Error loading WFS borders:', error));
 
 
-/*
-    const builMVT = new VectorTileLayer({
-      declutter: true,
-        minZoom: 12, // Only show at zoom 10 and higher
-        maxZoom: 20, // Hide at zoom levels above 20
-      source: new VectorTileSource({
-
-        attributions:
-          'WbbbbWW',
-
-        format: new MVT(),
-        url: this.geoServerService.getMvtUrl(VectorLayerIbfName.UgandaBuildings),
-      }),
-      style: new Style({
-        stroke: new Stroke({ color: this.borderColor, width: 1 }),
-        fill: new Fill({ color: '#0088FF80' })
-      })
-      //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
-    });*/
+    /*
+        const builMVT = new VectorTileLayer({
+          declutter: true,
+            minZoom: 12, // Only show at zoom 10 and higher
+            maxZoom: 20, // Hide at zoom levels above 20
+          source: new VectorTileSource({
     
+            attributions:
+              'WbbbbWW',
+    
+            format: new MVT(),
+            url: this.geoServerService.getMvtUrl(VectorLayerIbfName.UgandaBuildings),
+          }),
+          style: new Style({
+            stroke: new Stroke({ color: this.borderColor, width: 1 }),
+            fill: new Fill({ color: '#0088FF80' })
+          })
+          //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
+        });*/
+
     // Define Malawi's extent in EPSG:4326 (lon/lat), then transform to map projection
     const malawiExtent4326: [number, number, number, number] = [32.6, -17.1, 35.9, -9.4];
     const malawiExtent3857 = transformExtent(malawiExtent4326, 'EPSG:4326', 'EPSG:3857');
-    
+
     const malawiBorderMVT = new VectorTileLayer({
       declutter: true,
       extent: malawiExtent3857, // Only request tiles within Malawi's bounds
@@ -188,8 +188,8 @@ export class Layers implements AfterViewInit {
       //style: createMapboxStreetsV6Style(Style, Fill, Stroke, Icon, Text),
     });
 
-     const malawiBorderWFS = new VectorLayer({
-      minZoom: 1, 
+    const malawiBorderWFS = new VectorLayer({
+      minZoom: 1,
       maxZoom: 20, // Hide at zoom levels above 20
       source: new VectorSource({
         format: new GeoJSON(),
@@ -206,47 +206,71 @@ export class Layers implements AfterViewInit {
         });
       }
     });
-/*
 
-    // Add uganda roads layer (WFS with CQL filter for motorway and primary only)
-    const roadsWFS = new VectorLayer({
-      minZoom: 1, // Only show at zoom 10 and higher
+    const sudanRcLocsWFS = new VectorLayer({
+      minZoom: 1,
       maxZoom: 20, // Hide at zoom levels above 20
       source: new VectorSource({
         format: new GeoJSON(),
         url: this.geoServerService.getWfsUrlWithFilter(
-          VectorLayerIbfName.MalawiRoads,
-          "fclass IN ('motorway','primary', 'secondary')"
+          VectorLayerIbfName.SudanRCLocs
         ),
       }),
       style: (feature) => {
-        const highway = feature.get('fclass');
         let color = '#ff00ea';
-        let width = 1.5;
-
-        switch (highway) {
-          case 'motorway': color = '#e74c3c'; width = 4; break;
-          case 'primary': color = '#e67e22'; width = 3; break;
-            case 'secondary': color = '#5900d5'; width = 2.5; break;
-          case 'tertiary': color = '#1500ff'; width = 2; break;
-          case 'unclassified': color = '#0ae675ff'; width = 2; break;
-          case 'track': color = 'rgb(255, 204, 0)'; width = 2; break; 
-          default: color = '#ff00ea'; width = 2.5; break;       
-        }
+        let radius = 5;
 
         return new Style({
-          stroke: new Stroke({ color, width })
+          image: new Circle({
+            radius: radius,
+            fill: new Fill({ color: color }),
+            stroke: new Stroke({ color: '#f72f2f', width: 1 })
+          })
         });
       }
     });
-
-    this.map.addLayer(roadsWFS);
-    this.map.addLayer(builMVT);
-
-*/
+    /*
+    
+        // Add uganda roads layer (WFS with CQL filter for motorway and primary only)
+        const roadsWFS = new VectorLayer({
+          minZoom: 1, // Only show at zoom 10 and higher
+          maxZoom: 20, // Hide at zoom levels above 20
+          source: new VectorSource({
+            format: new GeoJSON(),
+            url: this.geoServerService.getWfsUrlWithFilter(
+              VectorLayerIbfName.MalawiRoads,
+              "fclass IN ('motorway','primary', 'secondary')"
+            ),
+          }),
+          style: (feature) => {
+            const highway = feature.get('fclass');
+            let color = '#ff00ea';
+            let width = 1.5;
+    
+            switch (highway) {
+              case 'motorway': color = '#e74c3c'; width = 4; break;
+              case 'primary': color = '#e67e22'; width = 3; break;
+                case 'secondary': color = '#5900d5'; width = 2.5; break;
+              case 'tertiary': color = '#1500ff'; width = 2; break;
+              case 'unclassified': color = '#0ae675ff'; width = 2; break;
+              case 'track': color = 'rgb(255, 204, 0)'; width = 2; break; 
+              default: color = '#ff00ea'; width = 2.5; break;       
+            }
+    
+            return new Style({
+              stroke: new Stroke({ color, width })
+            });
+          }
+        });
+    
+        this.map.addLayer(roadsWFS);
+        this.map.addLayer(builMVT);
+    
+    */
     this.map.addLayer(malawiBorderWFS);
     //this.map.addLayer(malawiBorderMVT);
 
+    this.map.addLayer(sudanRcLocsWFS);
     this.map.addLayer(borderMVT);
     //this.map.addLayer(borderWFS);
     // Add WFS cropland layer
@@ -352,9 +376,9 @@ export class Layers implements AfterViewInit {
   }
 
   // must be applied before adding the layer to the map
-  private ApplyRasterColoring(layer : TileLayer): void {
+  private ApplyRasterColoring(layer: TileLayer): void {
 
-        // beforeoperations prerender postrender
+    // beforeoperations prerender postrender
     layer.on('prerender', (evt) => {
       // return
       if (evt.context) {
@@ -386,7 +410,7 @@ export class Layers implements AfterViewInit {
         },
         serverType: 'geoserver',
         transition: 0 // used for smoothing load in maybe?
-        
+
       }),
       // background: '#ff00ff', // No alpha support, fills map with color
       opacity: 1
@@ -646,15 +670,15 @@ export class Layers implements AfterViewInit {
   // DEBUG to compare WFS
   private addCroplandWFSLayer(): void {
     const minZoomForWFS = 10;
-    
+
     // Check current zoom level
     const currentZoom = this.map.getView().getZoom() || 0;
-    
+
     // Only load if already at appropriate zoom
     if (currentZoom >= minZoomForWFS) {
       this.loadRoadsWFSInView();
     }
-    
+
     // Listen for map movement to load roads in view
     this.map.on('moveend', () => {
       const zoom = this.map.getView().getZoom() || 0;

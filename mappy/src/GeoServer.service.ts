@@ -5,9 +5,10 @@ import { Observable } from 'rxjs';
 export enum RasterLayerIbfName {
     Eth11Flood = 'ibf-system:flood_extent_11-hour_ETH',
     UgaGrass = 'ibf-system:grassland_UGA',
-    UgaCrop = 'ibf-system:cropland_UGA'
+    UgaCrop = 'ibf-system:cropland_UGA',
     //'ibf-system:cropland_UGA'//'ibf-system:rainfall_forecast_11-month_UGA',
     // 'ibf-system:flood_extent_7-day_UGA',
+    EthPopulation = 'ibf-system:bb-eth_pd_2020_1km_UNadj',
 }
 
 export enum VectorLayerIbfName {
@@ -16,7 +17,8 @@ export enum VectorLayerIbfName {
     UgandaBuildings = 'ibf-system:gis_osm_buildings_a_free_1',
     UgandaLanduse = 'ibf-system:gis_osm_landuse_a_free_1',
     UgandaRoads = 'ibf-system:gis_osm_roads_free_1',
-    MalawiBorders = 'ibf-system:gpkgtest'
+    MalawiBorders = 'ibf-system:gpkgtest',
+    SudanRCLocs = 'ibf-system:red_cross_branches_SDN_test',
 }
 
 export const superSecretApiKey = '7b02PI5MailPcMoXxEql';

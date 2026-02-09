@@ -161,7 +161,7 @@ export class MaptilerTest implements AfterViewInit {
     toggleRasterLayerEth(): void {
         this.showRasterLayerEth = !this.showRasterLayerEth;
         if (this.showRasterLayerEth) {
-            this.rasterLayerEth = this.addGeoServerRasterLayer(RasterLayerIbfName.Eth11Flood);
+            this.rasterLayerEth = this.addGeoServerRasterLayer(RasterLayerIbfName.EthPopulation);
         } else {
             if (this.rasterLayerEth) {
                 this.map.removeLayer(this.rasterLayerEth);
