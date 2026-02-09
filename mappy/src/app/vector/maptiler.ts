@@ -419,15 +419,24 @@ export class MaptilerTest implements AfterViewInit {
     }
 
         private addStaticImageLayerPlain(): ImageLayer<Static> {
-        // Image bounds in EPSG:3857 (Web Mercator)
-        // From eth_pd_2020_1km_UNadj_metadata_3857.json
-        const bounds = [3673404.0325285406, 370298.7959266848, 5341341.062909341, 1677630.2056031844];
+        // Calculate bounds from transform in eth_pd_2020_1km_UNadj_metadata_b3857.json
+        // Transform format: [pixel_width, 0, x_origin, 0, -pixel_height, y_origin, 0, 0, 1]
+        const transform = [932.7462753185313, 0.0, 3673404.0325285406, 0.0, -932.7462753185313, 1677630.2056031844];
+        const width = 1788;
+        const height = 1402;
+        
+        const left = transform[2];
+        const top = transform[5];
+        const right = transform[2] + (width * transform[0]);
+        const bottom = transform[5] + (height * transform[4]);
+        
+        const bounds = [left, bottom, right, top];
         
         const imageLayer = new ImageLayer({
             source: new Static({
 
             // url: 'image/eth_pd_2020_1km_UNadj_c0a.png',
-            url: 'image/eth_pd_2020_1km_UNadj_c0_c3857.png',
+            url: 'image/eth_pd_2020_1km_UNadj_c0_b3857.png',
             //url: 'image/eth_pd_2020_1km_UNadj0.png',
                 imageExtent: bounds,
                 projection: 'EPSG:3857'

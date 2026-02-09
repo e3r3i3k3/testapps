@@ -1,6 +1,7 @@
 import rasterio
 from rasterio.plot import reshape_as_image
-from rasterio.warp import calculate_default_transform, reproject, Resampling, transform_bounds
+from rasterio.warp import calculate_default_transform, reproject, Resampling
+from rasterio.transform import array_bounds
 from rasterio.crs import CRS
 import numpy as np
 from PIL import Image
@@ -43,12 +44,9 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
                 resampling=Resampling.bilinear
             )
         
-        # Calculate bounds from the actual transform used (ensures pixel-perfect alignment)
-        # bounds = (left, bottom, right, top)
-        left = transform[2]
-        top = transform[5]
-        right = left + (width * transform[0])
-        bottom = top + (height * transform[4])
+        # Calculate bounds from the transform matrix and raster dimensions
+        # This ensures bounds match the actual pixel grid
+        new_bounds = array_bounds(height, width, transform)
         
         # Extract geo data with updated projection
         geo_data = {
@@ -61,10 +59,10 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
             'crs': str(dst_crs),
             'transform': list(transform),
             'bounds': {
-                'left': left,
-                'bottom': bottom,
-                'right': right,
-                'top': top
+                'left': new_bounds[0],
+                'bottom': new_bounds[1],
+                'right': new_bounds[2],
+                'top': new_bounds[3]
             },
             'res': (transform[0], -transform[4]),
             'indexes': list(src.indexes),
