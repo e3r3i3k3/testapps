@@ -88,13 +88,17 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
         else:
             raise ValueError(f"Unsupported band count: {src.count}")
         
+        compress_level = 0
+
         # Generate output filenames
         base_name = os.path.splitext(os.path.basename(tif_path))[0]
-        png_path = os.path.join(output_dir, f"{base_name}.png")
+        png_path = os.path.join(output_dir, f"{base_name}_c{compress_level}.png")
         json_path = os.path.join(output_dir, f"{base_name}_metadata.json")
         
-        # Save PNG
-        img.save(png_path)
+        # Save PNG with highest quality settings
+        # compress_level=0 means no compression (highest quality, largest file)
+        # optimize=False skips optimization passes
+        img.save(png_path, compress_level, optimize=False)
         print(f"\nPNG saved to: {png_path}")
         
         # Save geo data as JSON

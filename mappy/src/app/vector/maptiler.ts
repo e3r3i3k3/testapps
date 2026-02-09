@@ -30,6 +30,8 @@ export class MaptilerTest implements AfterViewInit {
     private popup!: Overlay;
     private rasterLayerEth?: TileLayer<TileWMS>;
     showRasterLayerEth = false;
+    private populationPngLayer?: ImageLayer<RasterSource>;
+    showPopulationPng = false;
 
     constructor(private geoServerService: GeoServerService) { }
 
@@ -112,9 +114,6 @@ export class MaptilerTest implements AfterViewInit {
                 
                 // Apply the modified style
                 apply(this.map, style);
-                
-                // Add static PNG image layer after map style is loaded
-                this.addStaticImageLayer();
             })
             .catch(error => {
                 console.error('Error loading style:', error);
@@ -174,6 +173,18 @@ export class MaptilerTest implements AfterViewInit {
         }
     }
 
+    togglePopulationPng(): void {
+        this.showPopulationPng = !this.showPopulationPng;
+        if (this.showPopulationPng) {
+            this.populationPngLayer = this.addStaticImageLayer();
+        } else {
+            if (this.populationPngLayer) {
+                this.map.removeLayer(this.populationPngLayer);
+                this.populationPngLayer = undefined;
+            }
+        }
+    }
+
     private addGeoServerRasterLayer(layerSource: RasterLayerIbfName): TileLayer<TileWMS> {
         const layer = new TileLayer({
             source: new TileWMS({
@@ -192,13 +203,13 @@ export class MaptilerTest implements AfterViewInit {
         return layer;
     }
 
-    private addStaticImageLayer(): void {
+    private addStaticImageLayer(): ImageLayer<RasterSource> {
         // Image bounds in EPSG:4326 (WGS84)
         const bounds = [32.99874987166672, 3.324583523068185, 47.98208314506672, 14.899583476768186];
         
         // Create the base static image source
         const staticSource = new Static({
-            url: 'image/eth_pd_2020_1km_UNadj.png',
+            url: 'image/eth_pd_2020_1km_UNadj0.png',
             imageExtent: bounds,
             projection: 'EPSG:4326'
         });
@@ -219,11 +230,14 @@ export class MaptilerTest implements AfterViewInit {
                 // Assuming the image is grayscale or we use the R channel
                 let value = pixel[0] / 255;
 
-                if (value < 0.6) {
-                    return [0,0,0]; // Transparent for very low values
+                let threshold = 0.001;
+
+                value = (value - threshold) / (1 - threshold); // Normalize to 0-1 for values between 0.6 and 1.0
+
+                if (value < 0.4) {
+                    return [0,255,0,255]; // Transparent for very low values
                 }
 
-                value = (value - 0.6) / 0.4; // Normalize to 0-1 for values between 0.6 and 1.0
                 
                 // Define green and purple colors
                 const color0 = [255, 255, 100];
@@ -260,6 +274,7 @@ export class MaptilerTest implements AfterViewInit {
          */
 
         this.map.addLayer(imageLayer);
+        return imageLayer;
     }
 
 }
