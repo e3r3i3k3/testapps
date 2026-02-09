@@ -125,8 +125,8 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
 
         # Generate output filenames
         base_name = os.path.splitext(os.path.basename(tif_path))[0]
-        png_path = os.path.join(output_dir, f"{base_name}_c{compress_level}_c3857.png")
-        json_path = os.path.join(output_dir, f"{base_name}_metadata_c3857.json")
+        png_path = os.path.join(output_dir, f"{base_name}_c{compress_level}_b3857.png")
+        json_path = os.path.join(output_dir, f"{base_name}_metadata_b3857.json")
         
         # Save PNG with highest quality settings
         # compress_level=0 means no compression (highest quality, largest file)

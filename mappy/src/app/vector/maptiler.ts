@@ -421,7 +421,7 @@ export class MaptilerTest implements AfterViewInit {
         private addStaticImageLayerPlain(): ImageLayer<Static> {
         // Image bounds in EPSG:3857 (Web Mercator)
         // From eth_pd_2020_1km_UNadj_metadata_3857.json
-        const bounds = [3673404.0325285406, 369919.9276066036, 5341154.372798074, 1677630.2056031844];
+        const bounds = [3673404.0325285406, 370298.7959266848, 5341341.062909341, 1677630.2056031844];
         
         const imageLayer = new ImageLayer({
             source: new Static({
