@@ -76,6 +76,11 @@
                     style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer;">
                 {{ showRasterLayerEth ? 'Hide' : 'Show' }} Ethiopia Population GeoTiff
             </button>
+            <button (click)="toggleRasterLayerZmb()" 
+                    [class.active]="showRasterLayerZmb"
+                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                {{ showRasterLayerZmb ? 'Hide' : 'Show' }} ZMB Flood GeoTiff
+            </button>
             <button (click)="togglePopulationPng()" 
                     [class.active]="showPopulationPng"
                     style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer; margin-left: 10px;">

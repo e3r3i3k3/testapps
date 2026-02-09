@@ -29,6 +29,8 @@ export class MaptilerTest implements AfterViewInit {
     private popup!: Overlay;
     private rasterLayerEth?: TileLayer<TileWMS>;
     showRasterLayerEth = false;
+    private rasterLayerZmb?: TileLayer<TileWMS>;
+    showRasterLayerZmb = false;
     private populationPngLayer?: ImageLayer<RasterSource>;
     showPopulationPng = false;
     private staticPngLayer?: ImageLayer<Static>;
@@ -95,14 +97,7 @@ export class MaptilerTest implements AfterViewInit {
             })
         });
         
-        // Disable image smoothing on map canvas for crisp pixels
         const mapElement = this.map.getTargetElement();
-        const canvas = mapElement.querySelector('canvas');
-        if (canvas) {
-            canvas.style.imageRendering = 'pixelated';
-            canvas.style.imageRendering = '-moz-crisp-edges';
-            canvas.style.imageRendering = 'crisp-edges';
-        }
 
         // Non-edited sytle
         //  apply(this.map, styleJson);
@@ -198,6 +193,18 @@ export class MaptilerTest implements AfterViewInit {
         }
     }
 
+    toggleRasterLayerZmb(): void {
+        this.showRasterLayerZmb = !this.showRasterLayerZmb;
+        if (this.showRasterLayerZmb) {
+            this.rasterLayerZmb = this.addGeoServerRasterLayer(RasterLayerIbfName.ZmbFlood);
+        } else {
+            if (this.rasterLayerZmb) {
+                this.map.removeLayer(this.rasterLayerZmb);
+                this.rasterLayerZmb = undefined;
+            }
+        }
+    }
+
     togglePopulationPng(): void {
         this.showPopulationPng = !this.showPopulationPng;
         if (this.showPopulationPng) {
@@ -260,23 +267,35 @@ export class MaptilerTest implements AfterViewInit {
                 // Assuming the image is grayscale or we use the R channel
                 let value = pixel[0] / 255;
 
-                // const threshold = 0.627;//data.threshold || 0.1;
-                const threshold = data.threshold || 0.1;
+                const threshold = 0.628;// data starts at A0, so 160. 
+                // const threshold = data.threshold || 0.1;
 
                 value = (value - threshold) / (1 - threshold); // Normalize to 0-1 for values between 0.6 and 1.0
 
                 if (value < 0) {
-                    return [0,255,0,255]; // Transparent for very low values
+                    return [0,0,0,0]; // Transparent for very low values
                 }
 
                 
-                const color0 = [255, 255, 255];
-                const color1 = [255, 0, 255];
+                const color0 = [100, 150, 255];
+                const color1 = [255, 55, 0];
+                const color2 = [255, 0, 0];
                 
-                // Interpolate between green and purple based on value
-                const r = color0[0] + (color1[0] - color0[0]) * value * threshold;
-                const g = color0[1] + (color1[1] - color0[1]) * value;
-                const b = color0[2] + (color1[2] - color0[2]) * value;
+                // Interpolate between 3 colors: color0 -> color1 (middle) -> color2
+                let r, g, b;
+                if (value < 0.5) {
+                    // Interpolate between color0 and color1
+                    const t = value * 2; // Normalize to 0-1 for first half
+                    r = color0[0] + (color1[0] - color0[0]) * t;
+                    g = color0[1] + (color1[1] - color0[1]) * t;
+                    b = color0[2] + (color1[2] - color0[2]) * t;
+                } else {
+                    // Interpolate between color1 and color2
+                    const t = (value - 0.5) * 2; // Normalize to 0-1 for second half
+                    r = color1[0] + (color2[0] - color1[0]) * t;
+                    g = color1[1] + (color2[1] - color1[1]) * t;
+                    b = color1[2] + (color2[2] - color1[2]) * t;
+                }
                 
                 // Return RGBA
                 return [r, g, b, pixel[3]];
@@ -297,6 +316,7 @@ export class MaptilerTest implements AfterViewInit {
             source: this.rasterSource,
             opacity: 0.7
         });
+        
 
         this.map.addLayer(imageLayer);
         return imageLayer;
