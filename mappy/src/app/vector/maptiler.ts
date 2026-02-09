@@ -196,14 +196,68 @@ export class MaptilerTest implements AfterViewInit {
         // Image bounds in EPSG:4326 (WGS84)
         const bounds = [32.99874987166672, 3.324583523068185, 47.98208314506672, 14.899583476768186];
         
+        // Create the base static image source
+        const staticSource = new Static({
+            url: 'image/eth_pd_2020_1km_UNadj.png',
+            imageExtent: bounds,
+            projection: 'EPSG:4326'
+        });
+
+        // Create a raster source with a color gradient shader
+        const rasterSource = new RasterSource({
+            sources: [staticSource],
+            operation: (pixels, data) => {
+                // pixels is an array of pixel arrays from each source
+                const pixel = pixels[0];
+                
+                // Check if pixel is an array, return magenta if not
+                if (!Array.isArray(pixel)) {
+                    return [255, 0, 255, 255]; // Magenta
+                }
+                
+                // Get the grayscale value (normalized 0-1)
+                // Assuming the image is grayscale or we use the R channel
+                let value = pixel[0] / 255;
+
+                if (value < 0.6) {
+                    return [0,0,0]; // Transparent for very low values
+                }
+
+                value = (value - 0.6) / 0.4; // Normalize to 0-1 for values between 0.6 and 1.0
+                
+                // Define green and purple colors
+                const color0 = [255, 255, 100];
+                const color1 = [255, 0, 255];
+                
+                // Interpolate between green and purple based on value
+                const r = color0[0] + (color1[0] - color0[0]) * value;
+                const g = color0[1] + (color1[1] - color0[1]) * value;
+                const b = color0[2] + (color1[2] - color0[2]) * value;
+                
+                // Return RGBA
+                return [r, g, b, pixel[3]];
+            }
+        });
+
         const imageLayer = new ImageLayer({
+            source: rasterSource,
+            opacity: 0.7
+        });
+
+        /**
+         
+         // Using a static source with no color changes:
+         
+         const imageLayer = new ImageLayer({
             source: new Static({
                 url: 'image/eth_pd_2020_1km_UNadj.png',
                 imageExtent: bounds,
                 projection: 'EPSG:4326'  // Tell OpenLayers the image is in this projection
             }),
-            opacity: 0.7
+            opacity: 0.7,
+            
         });
+         */
 
         this.map.addLayer(imageLayer);
     }
