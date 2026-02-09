@@ -5,6 +5,7 @@ import Mapp from 'ol/Map';
 import ImageLayer from 'ol/layer/Image';
 import { TileWMS, XYZ } from 'ol/source';
 import RasterSource from 'ol/source/Raster.js';
+import Static from 'ol/source/ImageStatic';
 import { attributions, GeoServerService, geoserverUrl, mapSources, RasterLayerIbfName, superSecretApiKey, VectorLayerIbfName } from '../../GeoServer.service';
 import TileLayer from 'ol/layer/Tile';
 import VectorSource from 'ol/source/Vector';
@@ -16,6 +17,7 @@ import { defaults as defaultControls } from 'ol/control/defaults.js';
 import 'ol/ol.css';
 import { apply } from 'ol-mapbox-style';
 import Overlay from 'ol/Overlay.js';
+import { transformExtent } from 'ol/proj';
 
 
 @Component({
@@ -111,6 +113,9 @@ export class MaptilerTest implements AfterViewInit {
                 
                 // Apply the modified style
                 apply(this.map, style);
+                
+                // Add static PNG image layer after map style is loaded
+                this.addStaticImageLayer();
             })
             .catch(error => {
                 console.error('Error loading style:', error);
@@ -186,6 +191,24 @@ export class MaptilerTest implements AfterViewInit {
 
         this.map.addLayer(layer);
         return layer;
+    }
+
+    private addStaticImageLayer(): void {
+        // Image bounds in EPSG:4326 (WGS84)
+        const bounds = [32.99874987166672, 3.324583523068185, 47.98208314506672, 14.899583476768186];
+        
+        // Transform bounds to EPSG:3857 (Web Mercator) which the map uses
+        const transformedBounds = transformExtent(bounds, 'EPSG:4326', 'EPSG:3857');
+        
+        const imageLayer = new ImageLayer({
+            source: new Static({
+                url: 'image/eth_pd_2020_1km_UNadj.png',
+                imageExtent: transformedBounds
+            }),
+            opacity: 0.7
+        });
+
+        this.map.addLayer(imageLayer);
     }
 
 }
