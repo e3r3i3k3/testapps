@@ -83,5 +83,15 @@
                 {{ showPopulationPng ? 'Hide' : 'Show' }} Population PNG
             </button>
         </div>
+        <div style="margin-top: 15px;">
+            <label for="threshold-slider" style="margin-right: 10px;">Threshold: {{ thresholdValue.toFixed(3) }}</label>
+            <input id="threshold-slider" type="range" min="0.000001" max=".9999999" step="0.0001" 
+                   [value]="thresholdValue" 
+                   (input)="onThresholdChange($event)"
+                   style="width: 300px; vertical-align: middle;">
+        </div>
+        <div style="margin-top: 15px;">
+            <img src="image/eth_pd_2020_1km_UNadj.png" alt="Ethiopia Population Density 2020" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
+        </div>
     </div>
 </main>

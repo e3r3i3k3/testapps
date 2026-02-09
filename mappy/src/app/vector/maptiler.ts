@@ -32,6 +32,8 @@ export class MaptilerTest implements AfterViewInit {
     showRasterLayerEth = false;
     private populationPngLayer?: ImageLayer<RasterSource>;
     showPopulationPng = false;
+    thresholdValue = 0.1;
+    private rasterSource?: RasterSource;
 
     constructor(private geoServerService: GeoServerService) { }
 
@@ -224,7 +226,7 @@ export class MaptilerTest implements AfterViewInit {
         });
 
         // Create a raster source with a color gradient shader
-        const rasterSource = new RasterSource({
+        this.rasterSource = new RasterSource({
             sources: [staticSource],
             operation: (pixels, data) => {
                 // pixels is an array of pixel arrays from each source
@@ -239,11 +241,11 @@ export class MaptilerTest implements AfterViewInit {
                 // Assuming the image is grayscale or we use the R channel
                 let value = pixel[0] / 255;
 
-                let threshold = 0.001;
+                const threshold = data.threshold;
 
                 value = (value - threshold) / (1 - threshold); // Normalize to 0-1 for values between 0.6 and 1.0
 
-                if (value < 0.4) {
+                if (value < 0) {
                     return [0,255,0,255]; // Transparent for very low values
                 }
 
@@ -262,8 +264,11 @@ export class MaptilerTest implements AfterViewInit {
             }
         });
         
+        // Set the initial threshold value
+        this.rasterSource.set('threshold', this.thresholdValue);
+        
         // Disable interpolation on the raster source's internal context
-        rasterSource.on('beforeoperations', (event: any) => {
+        this.rasterSource.on('beforeoperations', (event: any) => {
             const ctx = event.context;
             if (ctx) {
                 ctx.imageSmoothingEnabled = false;
@@ -274,7 +279,7 @@ export class MaptilerTest implements AfterViewInit {
         });
 
         const imageLayer = new ImageLayer({
-            source: rasterSource,
+            source: this.rasterSource,
             opacity: 0.7
         });
         
@@ -304,6 +309,15 @@ export class MaptilerTest implements AfterViewInit {
 
         this.map.addLayer(imageLayer);
         return imageLayer;
+    }
+
+    onThresholdChange(event: Event): void {
+        const target = event.target as HTMLInputElement;
+        this.thresholdValue = parseFloat(target.value);
+        if (this.rasterSource) {
+            this.rasterSource.set('threshold', this.thresholdValue);
+            this.rasterSource.changed();
+        }
     }
 
 }
