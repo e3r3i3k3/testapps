@@ -9,6 +9,7 @@ export enum RasterLayerIbfName {
     //'ibf-system:cropland_UGA'//'ibf-system:rainfall_forecast_11-month_UGA',
     // 'ibf-system:flood_extent_7-day_UGA',
     EthPopulation = 'ibf-system:bb-eth_pd_2020_1km_UNadj',
+    ZmbFlood = `ibf-system:bbb-flood_map_ZMB_RP20`,
 }
 
 export enum VectorLayerIbfName {

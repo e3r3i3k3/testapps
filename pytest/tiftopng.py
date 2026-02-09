@@ -109,7 +109,7 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
 
 if __name__ == "__main__":
     # Process the specified GeoTIFF
-    tif_file = "TestData/eth_pd_2020_1km_UNadj.tif"
+    tif_file = "TestData/flood_map_ZMB_RP20.tif"
     
     if os.path.exists(tif_file):
         tif_to_png_with_metadata(tif_file)

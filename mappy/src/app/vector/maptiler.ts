@@ -6,7 +6,6 @@ import ImageLayer from 'ol/layer/Image';
 import { TileWMS, XYZ } from 'ol/source';
 import RasterSource from 'ol/source/Raster.js';
 import Static from 'ol/source/ImageStatic';
-import Zoomify from 'ol/source/Zoomify';
 import { attributions, GeoServerService, geoserverUrl, mapSources, RasterLayerIbfName, superSecretApiKey, VectorLayerIbfName } from '../../GeoServer.service';
 import TileLayer from 'ol/layer/Tile';
 import VectorSource from 'ol/source/Vector';
@@ -34,8 +33,6 @@ export class MaptilerTest implements AfterViewInit {
     showPopulationPng = false;
     private staticPngLayer?: ImageLayer<Static>;
     showStaticPng = false;
-    private zoomifyLayer?: TileLayer<Zoomify>;
-    showZoomify = false;
     thresholdValue = 0.1;
     private rasterSource?: RasterSource;
 
@@ -49,6 +46,7 @@ export class MaptilerTest implements AfterViewInit {
         const key = superSecretApiKey;
         // Options: basic-v2 (smallest), streets-v2, outdoor-v2, dataviz, topo-v4
         const dataJson = `https://api.maptiler.com/maps/basic-v2/style.json?key=${key}`;
+        const dataJson_new = `https://api.maptiler.com/maps/019c41d2-17c7-7e5e-9a47-d3b3f9515a5b/style.json?key=${key}`;
         
         const attribution = new Attribution({
             collapsible: false,
@@ -212,18 +210,6 @@ export class MaptilerTest implements AfterViewInit {
         }
     }
 
-    toggleZoomify(): void {
-        this.showZoomify = !this.showZoomify;
-        if (this.showZoomify) {
-            this.zoomifyLayer = this.addZoomifyLayer();
-        } else {
-            if (this.zoomifyLayer) {
-                this.map.removeLayer(this.zoomifyLayer);
-                this.zoomifyLayer = undefined;
-            }
-        }
-    }
-
     private addGeoServerRasterLayer(layerSource: RasterLayerIbfName): TileLayer<TileWMS> {
         const layer = new TileLayer({
             source: new TileWMS({
@@ -242,33 +228,6 @@ export class MaptilerTest implements AfterViewInit {
         return layer;
     }
 
-    private addZoomifyLayer(): TileLayer<Zoomify> {
-        // Image bounds in EPSG:4326 (WGS84)
-        const extent = [32.99874987166672, 3.324583523068185, 47.98208314506672, 14.899583476768186];
-        
-        const layer = new TileLayer({
-            source: new Zoomify({
-                url: 'image/eth_zoomify/',
-                size: [1798, 1389],
-                crossOrigin: 'anonymous',
-                zDirection: -1
-            }),
-            opacity: 0.7,
-            extent: extent
-        });
-        
-        // Disable image smoothing for crisp pixels
-        layer.on('prerender', (event) => {
-            const ctx = event.context as CanvasRenderingContext2D;
-            ctx.imageSmoothingEnabled = false;
-            (ctx as any).mozImageSmoothingEnabled = false;
-            (ctx as any).webkitImageSmoothingEnabled = false;
-            (ctx as any).msImageSmoothingEnabled = false;
-        });
-
-        this.map.addLayer(layer);
-        return layer;
-    }
 
     private addStaticImageLayer(): ImageLayer<RasterSource> {
         // Image bounds in EPSG:4326 (WGS84)
@@ -278,7 +237,7 @@ export class MaptilerTest implements AfterViewInit {
         const staticSource = new Static({
             // 
             // url: 'image/eth_pd_2020_1km_UNadj_c0a.png',
-            //url: 'image/eth_pd_2020_1km_UNadj_c0acol.png',
+            // url: 'image/eth_pd_2020_1km_UNadj_c0acol.png',
             url: 'image/eth_pd_2020_1km_UNadj0.png',
             imageExtent: bounds,
             projection: 'EPSG:4326',
@@ -332,43 +291,12 @@ export class MaptilerTest implements AfterViewInit {
 
             event.data.threshold = this.thresholdValue;
 
-            const ctx = event.context;
-            if (ctx) {
-                ctx.imageSmoothingEnabled = false;
-                ctx.mozImageSmoothingEnabled = false;
-                ctx.webkitImageSmoothingEnabled = false;
-                ctx.msImageSmoothingEnabled = false;
-            }
         });
 
         const imageLayer = new ImageLayer({
             source: this.rasterSource,
             opacity: 0.7
         });
-        
-        // Disable image smoothing for crisp pixels
-        imageLayer.on('prerender', (event) => {
-            const ctx = event.context as CanvasRenderingContext2D;
-            ctx.imageSmoothingEnabled = false;
-            // Set all vendor-specific properties
-            (ctx as any).mozImageSmoothingEnabled = false;
-            (ctx as any).webkitImageSmoothingEnabled = false;
-            (ctx as any).msImageSmoothingEnabled = false;
-        });
-        /**
-         
-         // Using a static source with no color changes:
-         
-         const imageLayer = new ImageLayer({
-            source: new Static({
-                url: 'image/eth_pd_2020_1km_UNadj.png',
-                imageExtent: bounds,
-                projection: 'EPSG:4326'  // Tell OpenLayers the image is in this projection
-            }),
-            opacity: 0.7,
-            
-        });
-         */
 
         this.map.addLayer(imageLayer);
         return imageLayer;
@@ -389,73 +317,28 @@ export class MaptilerTest implements AfterViewInit {
         }
     }
 
-    private addStaticImageLayerPlain2(): ImageLayer<Static> {
+    private addStaticImageLayerPlain(): ImageLayer<Static> {
         // Image bounds in EPSG:4326 (WGS84)
-        const bounds = [32.99874987166672, 3.324583523068185, 47.98208314506672, 14.899583476768186];
+        const bounds = [21.998751327743022, -18.077933333316892, 33.70958469341794, -8.202933333325873];
         
         const imageLayer = new ImageLayer({
             source: new Static({
 
             // url: 'image/eth_pd_2020_1km_UNadj_c0a.png',
-            url: 'image/eth_pd_2020_1km_UNadj_c0acol.png',
+            //url: 'image/eth_pd_2020_1km_UNadj_c0acol.png',
             //url: 'image/eth_pd_2020_1km_UNadj0.png',
+            url: 'image/flood_map_ZMB_RP20_c0.png',
                 imageExtent: bounds,
-                projection: 'EPSG:4326'
+                projection: 'EPSG:4326',
+                interpolate: false // Disable interpolation for crisp pixels
             }),
-            opacity: 0.7
-        });
-        
-        // Disable image smoothing for crisp pixels
-        imageLayer.on('prerender', (event) => {
-            const ctx = event.context as CanvasRenderingContext2D;
-            ctx.imageSmoothingEnabled = false;
-            (ctx as any).mozImageSmoothingEnabled = false;
-            (ctx as any).webkitImageSmoothingEnabled = false;
-            (ctx as any).msImageSmoothingEnabled = false;
+            opacity: 0.7,
         });
 
         this.map.addLayer(imageLayer);
         return imageLayer;
     }
 
-        private addStaticImageLayerPlain(): ImageLayer<Static> {
-        // Calculate bounds from transform in eth_pd_2020_1km_UNadj_metadata_b3857.json
-        // Transform format: [pixel_width, 0, x_origin, 0, -pixel_height, y_origin, 0, 0, 1]
-        const transform = [932.7462753185313, 0.0, 3673404.0325285406, 0.0, -932.7462753185313, 1677630.2056031844];
-        const width = 1788;
-        const height = 1402;
-        
-        const left = transform[2];
-        const top = transform[5];
-        const right = transform[2] + (width * transform[0]);
-        const bottom = transform[5] + (height * transform[4]);
-        
-        const bounds = [left, bottom, right, top];
-        
-        const imageLayer = new ImageLayer({
-            source: new Static({
-
-            // url: 'image/eth_pd_2020_1km_UNadj_c0a.png',
-            url: 'image/eth_pd_2020_1km_UNadj_c0_b3857.png',
-            //url: 'image/eth_pd_2020_1km_UNadj0.png',
-                imageExtent: bounds,
-                projection: 'EPSG:3857'
-            }),
-            opacity: 0.7
-        });
-        
-        // Disable image smoothing for crisp pixels
-        imageLayer.on('prerender', (event) => {
-            const ctx = event.context as CanvasRenderingContext2D;
-            ctx.imageSmoothingEnabled = false;
-            (ctx as any).mozImageSmoothingEnabled = false;
-            (ctx as any).webkitImageSmoothingEnabled = false;
-            (ctx as any).msImageSmoothingEnabled = false;
-        });
-
-        this.map.addLayer(imageLayer);
-        return imageLayer;
-    }
 
     onThresholdChange(event: Event): void {
         const target = event.target as HTMLInputElement;
