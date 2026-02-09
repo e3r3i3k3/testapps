@@ -78,6 +78,15 @@ export class MaptilerTest implements AfterViewInit {
                 zoom: 1
             })
         });
+        
+        // Disable image smoothing on map canvas for crisp pixels
+        const mapElement = this.map.getTargetElement();
+        const canvas = mapElement.querySelector('canvas');
+        if (canvas) {
+            canvas.style.imageRendering = 'pixelated';
+            canvas.style.imageRendering = '-moz-crisp-edges';
+            canvas.style.imageRendering = 'crisp-edges';
+        }
 
         // Non-edited sytle
         //  apply(this.map, styleJson);
@@ -252,12 +261,32 @@ export class MaptilerTest implements AfterViewInit {
                 return [r, g, b, pixel[3]];
             }
         });
+        
+        // Disable interpolation on the raster source's internal context
+        rasterSource.on('beforeoperations', (event: any) => {
+            const ctx = event.context;
+            if (ctx) {
+                ctx.imageSmoothingEnabled = false;
+                ctx.mozImageSmoothingEnabled = false;
+                ctx.webkitImageSmoothingEnabled = false;
+                ctx.msImageSmoothingEnabled = false;
+            }
+        });
 
         const imageLayer = new ImageLayer({
             source: rasterSource,
             opacity: 0.7
         });
-
+        
+        // Disable image smoothing for crisp pixels
+        imageLayer.on('prerender', (event) => {
+            const ctx = event.context as CanvasRenderingContext2D;
+            ctx.imageSmoothingEnabled = false;
+            // Set all vendor-specific properties
+            (ctx as any).mozImageSmoothingEnabled = false;
+            (ctx as any).webkitImageSmoothingEnabled = false;
+            (ctx as any).msImageSmoothingEnabled = false;
+        });
         /**
          
          // Using a static source with no color changes:
