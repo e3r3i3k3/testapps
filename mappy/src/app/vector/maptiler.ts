@@ -17,7 +17,6 @@ import { defaults as defaultControls } from 'ol/control/defaults.js';
 import 'ol/ol.css';
 import { apply } from 'ol-mapbox-style';
 import Overlay from 'ol/Overlay.js';
-import { transformExtent } from 'ol/proj';
 
 
 @Component({
@@ -197,13 +196,11 @@ export class MaptilerTest implements AfterViewInit {
         // Image bounds in EPSG:4326 (WGS84)
         const bounds = [32.99874987166672, 3.324583523068185, 47.98208314506672, 14.899583476768186];
         
-        // Transform bounds to EPSG:3857 (Web Mercator) which the map uses
-        const transformedBounds = transformExtent(bounds, 'EPSG:4326', 'EPSG:3857');
-        
         const imageLayer = new ImageLayer({
             source: new Static({
                 url: 'image/eth_pd_2020_1km_UNadj.png',
-                imageExtent: transformedBounds
+                imageExtent: bounds,
+                projection: 'EPSG:4326'  // Tell OpenLayers the image is in this projection
             }),
             opacity: 0.7
         });
