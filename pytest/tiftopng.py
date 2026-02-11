@@ -59,11 +59,22 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
         if src.count == 1:
             # Single band - grayscale
             img_array = data[0]
+            # Convert nodata values to 0
+            if src.nodata is not None:
+                img_array = np.where(img_array == src.nodata, 0, img_array)
             # Normalize to 0-255 range
+            # Lots of savings can be had here by rounding though, such as normalize to 128, 50, etc.
+            factor = 5
+            mult = (np.uint8)(255 / factor)
             if img_array.dtype != np.uint8:
-                img_min, img_max = np.nanmin(img_array), np.nanmax(img_array)
+                img_min = 0 #np.nanmin(img_array)
+                img_max = np.nanmax(img_array)
+                print(f"Band 1 min: {img_min}, max: {img_max}")
+
+
+
                 if img_min != img_max:
-                    img_array = ((img_array - img_min) / (img_max - img_min) * 255).astype(np.uint8)
+                    img_array = (((img_array) / (img_max) * factor).astype(np.uint8) * mult).astype(np.uint8)
                 else:
                     img_array = np.zeros_like(img_array, dtype=np.uint8)
             # Handle nodata values
@@ -71,27 +82,13 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
                 mask = data[0] == src.nodata
                 img_array[mask] = 0
             img = Image.fromarray(img_array, mode='L')
-        elif src.count >= 3:
-            # Multi-band - assume RGB or RGBA
-            img_array = reshape_as_image(data)
-            # Take first 3 bands for RGB
-            if src.count > 3:
-                img_array = img_array[:, :, :3]
-            # Normalize if needed
-            if img_array.dtype != np.uint8:
-                img_min, img_max = np.nanmin(img_array), np.nanmax(img_array)
-                if img_min != img_max:
-                    img_array = ((img_array - img_min) / (img_max - img_min) * 255).astype(np.uint8)
-                else:
-                    img_array = np.zeros_like(img_array, dtype=np.uint8)
-            img = Image.fromarray(img_array, mode='RGB')
         else:
             raise ValueError(f"Unsupported band count: {src.count}")
-        
+                
 
         # Generate output filenames
         base_name = os.path.splitext(os.path.basename(tif_path))[0]
-        png_path = os.path.join(output_dir, f"{base_name}.png")
+        png_path = os.path.join(output_dir, f"{base_name}_f{factor}.png")
         jpg_path = os.path.join(output_dir, f"{base_name}.jpg")
         json_path = os.path.join(output_dir, f"{base_name}_metadata.json")
         

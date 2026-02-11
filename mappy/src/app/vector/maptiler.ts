@@ -347,7 +347,8 @@ export class MaptilerTest implements AfterViewInit {
         
         // Create the base static image source
         const staticSource = new Static({
-            url: 'image/flood_map_ZMB_RP20_c0.png',
+            // url: 'image/flood_map_ZMB_RP2050.png',
+            url: 'image/flood_map_ZMB_RP20_f20.png',
             imageExtent: bounds,
             projection: 'EPSG:4326',
             interpolate: false // Disable interpolation for crisp pixels
@@ -365,23 +366,22 @@ export class MaptilerTest implements AfterViewInit {
                     return [255, 0, 255, 255]; // Magenta
                 }
                 
-                // Get the grayscale value (normalized 0-1)
-                // Assuming the image is grayscale or we use the R channel
                 let value = pixel[0] / 255;
 
-                const threshold = 0.628;// data starts at A0, so 160. 
-                // const threshold = data.threshold || 0.1;
 
-                value = (value - threshold) / (1 - threshold); // Normalize to 0-1 for values between 0.6 and 1.0
+                let max = data.threshold;
 
-                if (value < 0) {
+                if (value < 0.00001) {
                     return [0,0,0,0]; // Transparent for very low values
                 }
 
-                
-                const color0 = [100, 150, 255];
-                const color1 = [255, 55, 0];
-                const color2 = [255, 0, 0];
+                // normalize value
+                value = value / max;
+
+                // let nn = rgb(230, 0, 255);
+                const color0 = [255, 255, 0];
+                const color1 = [255, 0,0];
+                const color2 = [255, 0, 255];
                 
                 // Interpolate between 3 colors: color0 -> color1 (middle) -> color2
                 let r, g, b;
@@ -400,7 +400,7 @@ export class MaptilerTest implements AfterViewInit {
                 }
                 
                 // Return RGBA
-                return [r, g, b, pixel[3]];
+                return [r, g, b, 255];
             },
             lib: {
                 threshold: this.thresholdValue
@@ -449,7 +449,7 @@ export class MaptilerTest implements AfterViewInit {
             // url: 'image/eth_pd_2020_1km_UNadj_c0a.png',
             //url: 'image/eth_pd_2020_1km_UNadj_c0acol.png',
             //url: 'image/eth_pd_2020_1km_UNadj0.png',
-            url: 'image/flood_map_ZMB_RP20_c0.png',
+            url: 'image/flood_map_ZMB_RP20.png',
                 imageExtent: bounds,
                 projection: 'EPSG:4326',
                 interpolate: false // Disable interpolation for crisp pixels
