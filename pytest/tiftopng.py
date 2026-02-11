@@ -88,17 +88,17 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
         else:
             raise ValueError(f"Unsupported band count: {src.count}")
         
-        compress_level = 0
 
         # Generate output filenames
         base_name = os.path.splitext(os.path.basename(tif_path))[0]
-        png_path = os.path.join(output_dir, f"{base_name}_c{compress_level}.png")
+        png_path = os.path.join(output_dir, f"{base_name}.png")
+        jpg_path = os.path.join(output_dir, f"{base_name}.jpg")
         json_path = os.path.join(output_dir, f"{base_name}_metadata.json")
         
-        # Save PNG with highest quality settings
-        # compress_level=0 means no compression (highest quality, largest file)
+        # Save PNG
         # optimize=False skips optimization passes
-        img.save(png_path, compress_level, optimize=False)
+        img.save(png_path, optimize=True)
+        img.save(jpg_path, optimize=False, quality=10)
         print(f"\nPNG saved to: {png_path}")
         
         # Save geo data as JSON
@@ -109,6 +109,8 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
 
 if __name__ == "__main__":
     # Process the specified GeoTIFF
+    # flood_map_ZMB_RP20.tif
+    # eth_cropland.tif
     tif_file = "TestData/flood_map_ZMB_RP20.tif"
     
     if os.path.exists(tif_file):

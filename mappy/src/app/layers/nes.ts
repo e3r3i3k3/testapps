@@ -36,6 +36,7 @@ function NesShade(inputs: number[][] | ImageData[], data: any): ImageData {
     const pixels = imageData.data; // Uint8ClampedArray
     
     const c1 = [133, 3, 255];
+    const c2 = [255, 255, 255]; 
 
     
     // Process each pixel
@@ -51,7 +52,6 @@ function NesShade(inputs: number[][] | ImageData[], data: any): ImageData {
             continue;
         }
         
-
         pixels[i] = toNesColor(pixels[i]);
         pixels[i + 1] = toNesColor(pixels[i + 1]);
         pixels[i + 2] = toNesColor(pixels[i + 2]);

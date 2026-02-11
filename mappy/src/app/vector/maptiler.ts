@@ -32,7 +32,9 @@ export class MaptilerTest implements AfterViewInit {
     private rasterLayerZmb?: TileLayer<TileWMS>;
     showRasterLayerZmb = false;
     private populationPngLayer?: ImageLayer<RasterSource>;
+    private png2Layer?: ImageLayer<RasterSource>;
     showPopulationPng = false;
+    showPng2 = false;
     private staticPngLayer?: ImageLayer<Static>;
     showStaticPng = false;
     thresholdValue = 0.1;
@@ -217,6 +219,20 @@ export class MaptilerTest implements AfterViewInit {
         }
     }
 
+
+
+    togglePng2(): void {
+        this.showPng2 = !this.showPng2;
+        if (this.showPng2) {
+            this.png2Layer = this.addStaticImageLayer2();
+        } else {
+            if (this.png2Layer) {
+                this.map.removeLayer(this.png2Layer);
+                this.png2Layer = undefined;
+            }
+        }
+    }
+
     private addGeoServerRasterLayer(layerSource: RasterLayerIbfName): TileLayer<TileWMS> {
         const layer = new TileLayer({
             source: new TileWMS({
@@ -246,6 +262,92 @@ export class MaptilerTest implements AfterViewInit {
             // url: 'image/eth_pd_2020_1km_UNadj_c0a.png',
             // url: 'image/eth_pd_2020_1km_UNadj_c0acol.png',
             url: 'image/eth_pd_2020_1km_UNadj0.png',
+            imageExtent: bounds,
+            projection: 'EPSG:4326',
+            interpolate: false // Disable interpolation for crisp pixels
+        });
+
+        // Create a raster source with a color gradient shader
+        this.rasterSource = new RasterSource({
+            sources: [staticSource],
+            operation: (pixels, data) => {
+                // pixels is an array of pixel arrays from each source
+                const pixel = pixels[0];
+                
+                // Check if pixel is an array, return magenta if not
+                if (!Array.isArray(pixel)) {
+                    return [255, 0, 255, 255]; // Magenta
+                }
+                
+                // Get the grayscale value (normalized 0-1)
+                // Assuming the image is grayscale or we use the R channel
+                let value = pixel[0] / 255;
+
+                const threshold = 0.628;// data starts at A0, so 160. 
+                // const threshold = data.threshold || 0.1;
+
+                value = (value - threshold) / (1 - threshold); // Normalize to 0-1 for values between 0.6 and 1.0
+
+                if (value < 0) {
+                    return [0,0,0,0]; // Transparent for very low values
+                }
+
+                
+                const color0 = [100, 150, 255];
+                const color1 = [255, 55, 0];
+                const color2 = [255, 0, 0];
+                
+                // Interpolate between 3 colors: color0 -> color1 (middle) -> color2
+                let r, g, b;
+                if (value < 0.5) {
+                    // Interpolate between color0 and color1
+                    const t = value * 2; // Normalize to 0-1 for first half
+                    r = color0[0] + (color1[0] - color0[0]) * t;
+                    g = color0[1] + (color1[1] - color0[1]) * t;
+                    b = color0[2] + (color1[2] - color0[2]) * t;
+                } else {
+                    // Interpolate between color1 and color2
+                    const t = (value - 0.5) * 2; // Normalize to 0-1 for second half
+                    r = color1[0] + (color2[0] - color1[0]) * t;
+                    g = color1[1] + (color2[1] - color1[1]) * t;
+                    b = color1[2] + (color2[2] - color1[2]) * t;
+                }
+                
+                // Return RGBA
+                return [r, g, b, pixel[3]];
+            },
+            lib: {
+                threshold: this.thresholdValue
+            }
+        });
+        
+        // Disable interpolation on the raster source's internal context
+        this.rasterSource.on('beforeoperations', (event: any) => {
+
+            event.data.threshold = this.thresholdValue;
+
+        });
+
+        const imageLayer = new ImageLayer({
+            source: this.rasterSource,
+            opacity: 0.7
+        });
+        
+
+        this.map.addLayer(imageLayer);
+        return imageLayer;
+    }
+
+    private addStaticImageLayer2(): ImageLayer<RasterSource> {
+
+                // Image bounds in EPSG:4326 (WGS84)
+        const bounds = [21.998751327743022, -18.077933333316892, 33.70958469341794, -8.202933333325873];
+        
+
+        
+        // Create the base static image source
+        const staticSource = new Static({
+            url: 'image/flood_map_ZMB_RP20_c0.png',
             imageExtent: bounds,
             projection: 'EPSG:4326',
             interpolate: false // Disable interpolation for crisp pixels

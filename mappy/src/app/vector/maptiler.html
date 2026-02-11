@@ -86,10 +86,15 @@
                     style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer; margin-left: 10px;">
                 {{ showPopulationPng ? 'Hide' : 'Show' }} Population PNG
             </button>
+            <button (click)="togglePng2()" 
+                    [class.active]="showPng2"
+                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                {{ showPng2 ? 'Hide' : 'Show' }} s2
+            </button>
             <button (click)="toggleStaticPng()" 
                     [class.active]="showStaticPng"
                     style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer; margin-left: 10px;">
-                {{ showStaticPng ? 'Hide' : 'Show' }} Static PNG
+                {{ showStaticPng ? 'Hide' : 'Show' }} s1
             </button>
         </div>
         <div style="margin-top: 15px;">

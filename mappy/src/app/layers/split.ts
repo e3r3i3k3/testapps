@@ -43,12 +43,12 @@ function SplitLayersOverlay(pixels: number[][] | ImageData[], data: any) {
 
     let p = pixels[0];
     const tc1 = `rgb(255, 185, 54)`;
-    const tc2 = `rgb(73, 255, 92)`;
+    const tc2 = `rgb(62, 62, 255)`;
     const tc3 = `rgb(255, 131, 64)`;
 
     const th = 200; // threshold
     const c1 = [255, 185, 54];
-    const c2 = [73, 255, 92];
+    const c2 = [62, 62, 255];
     const c3 = [255, 131, 64];
     let output = [0, 0, 0, 0];
     if (Array.isArray(p)) {
