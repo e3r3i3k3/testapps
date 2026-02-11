@@ -56,39 +56,50 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
         data = src.read()
         
         # Handle different band counts
-        if src.count == 1:
-            # Single band - grayscale
-            img_array = data[0]
-            # Convert nodata values to 0
-            if src.nodata is not None:
-                img_array = np.where(img_array == src.nodata, 0, img_array)
-            # Normalize to 0-255 range
-            # Lots of savings can be had here by rounding though, such as normalize to 128, 50, etc.
-            factor = 5
-            mult = (np.uint8)(255 / factor)
-            if img_array.dtype != np.uint8:
-                img_min = 0 #np.nanmin(img_array)
-                img_max = np.nanmax(img_array)
-                print(f"Band 1 min: {img_min}, max: {img_max}")
-
-
-
-                if img_min != img_max:
-                    img_array = (((img_array) / (img_max) * factor).astype(np.uint8) * mult).astype(np.uint8)
-                else:
-                    img_array = np.zeros_like(img_array, dtype=np.uint8)
-            # Handle nodata values
-            if src.nodata is not None:
-                mask = data[0] == src.nodata
-                img_array[mask] = 0
-            img = Image.fromarray(img_array, mode='L')
-        else:
+        if src.count != 1:
             raise ValueError(f"Unsupported band count: {src.count}")
+        
+        # Single band - grayscale
+        img_array = data[0]
+
+        # Zero will be no data. Since everything is done in steps based on the factor, all data
+        # must then start at the first step
+        stepFactor = 6
+        img_array = img_array + stepFactor * 2
+
+        # Convert nodata values to 0
+        if src.nodata is not None:
+            img_array = np.where(img_array < 0, 0, img_array)
+        
+        # This is used to increase the range of the steps to use the full range
+        mult = round(255 / stepFactor)
+        # Normalize to the given factor
+        if img_array.dtype != np.uint8:
+            img_min = 0
+            img_max = np.nanmax(img_array)
+            print(f"Band 1 min: {img_min}, max: {img_max}. Actual min: {np.nanmin(img_array)}")
+
+            # Normalize to 0 to 1, then multiply by the step factor
+            # cast as int for rounding
+            img_array = ((img_array) / (img_max) * stepFactor).astype(np.uint8)
+            print(f"First pass. Should be <= than {stepFactor}. max: {np.nanmax(img_array)}, min: {np.nanmin(img_array)}")
+
+            # expand to 0-255 range
+            img_array = (img_array * mult).astype(np.uint8)
+            print(f"Second pass. Should be <= 255. max: {np.nanmax(img_array)}, min: {np.nanmin(img_array)}")
+
+
+        # Mask for no data values
+        # Is this needed or helping?
+        if src.nodata is not None:
+            mask = data[0] == 0
+            img_array[mask] = 0
+        img = Image.fromarray(img_array, mode='L')
                 
 
         # Generate output filenames
         base_name = os.path.splitext(os.path.basename(tif_path))[0]
-        png_path = os.path.join(output_dir, f"{base_name}_f{factor}.png")
+        png_path = os.path.join(output_dir, f"{base_name}_f{stepFactor}.png")
         jpg_path = os.path.join(output_dir, f"{base_name}.jpg")
         json_path = os.path.join(output_dir, f"{base_name}_metadata.json")
         
