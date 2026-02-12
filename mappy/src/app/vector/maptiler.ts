@@ -1,5 +1,5 @@
 
-import { AfterViewInit, Component } from '@angular/core';
+import { AfterViewInit, Component, output } from '@angular/core';
 import { View } from 'ol';
 import Mapp from 'ol/Map';
 import ImageLayer from 'ol/layer/Image';
@@ -17,6 +17,16 @@ import 'ol/ol.css';
 import { apply } from 'ol-mapbox-style';
 import Overlay from 'ol/Overlay.js';
 
+    function Lerp (a : number[], b : number[], t : number) : number [] {
+        const output = [];
+        for (let i = 0; i < a.length; i++) {
+            let aVal = a[i];
+            let bVal = (b[i] - a[i]) * t;
+            output.push(aVal + bVal);
+        } 
+            
+        return output;
+    }
 
 @Component({
     selector: 'app-maptiler',
@@ -320,13 +330,6 @@ export class MaptilerTest implements AfterViewInit {
                 threshold: this.thresholdValue
             }
         });
-        
-        // Disable interpolation on the raster source's internal context
-        this.rasterSource.on('beforeoperations', (event: any) => {
-
-            event.data.threshold = this.thresholdValue;
-
-        });
 
         const imageLayer = new ImageLayer({
             source: this.rasterSource,
@@ -348,7 +351,7 @@ export class MaptilerTest implements AfterViewInit {
         // Create the base static image source
         const staticSource = new Static({
             // url: 'image/flood_map_ZMB_RP2050.png',
-            url: 'image/flood_map_ZMB_RP20_f20.png',
+            url: 'image/flood_map_ZMB_RP20_f40.png',
             imageExtent: bounds,
             projection: 'EPSG:4326',
             interpolate: false // Disable interpolation for crisp pixels
@@ -366,44 +369,44 @@ export class MaptilerTest implements AfterViewInit {
                     return [255, 0, 255, 255]; // Magenta
                 }
                 
-                let value = pixel[0] / 255;
+                let value = pixel[0]/(255);
+                value = value * 10 * data.threshold
+                value -=  data.threshold;
+                // increase value and cap it
+                //value = Math.min(value * 4 * data.threshold, 1);
+                value = Math.min(value , 1);
+                value = Math.max(value, 0);
 
-
-                let max = data.threshold;
 
                 if (value < 0.00001) {
                     return [0,0,0,0]; // Transparent for very low values
                 }
+                let output = [0,0,0, 255];
 
-                // normalize value
-                value = value / max;
 
-                // let nn = rgb(230, 0, 255);
-                const color0 = [255, 255, 0];
-                const color1 = [255, 0,0];
-                const color2 = [255, 0, 255];
+                // let nn = rgb(255, 242, 0);
+                const color0 = [255, 255, 50, 150];
+                const color1 = [255, 0,0, 255];
+                const color2 = [50, 0, 255, 255];
                 
-                // Interpolate between 3 colors: color0 -> color1 (middle) -> color2
-                let r, g, b;
-                if (value < 0.5) {
+
+                if (value <= 0.5) {
                     // Interpolate between color0 and color1
                     const t = value * 2; // Normalize to 0-1 for first half
-                    r = color0[0] + (color1[0] - color0[0]) * t;
-                    g = color0[1] + (color1[1] - color0[1]) * t;
-                    b = color0[2] + (color1[2] - color0[2]) * t;
+                    output = Lerp(color0, color1, t);
                 } else {
                     // Interpolate between color1 and color2
-                    const t = (value - 0.5) * 2; // Normalize to 0-1 for second half
-                    r = color1[0] + (color2[0] - color1[0]) * t;
-                    g = color1[1] + (color2[1] - color1[1]) * t;
-                    b = color1[2] + (color2[2] - color1[2]) * t;
+                    const t = (value - .5) * 2; // Normalize to 0-1 for second half
+                    output = Lerp(color1, color2, t);
                 }
                 
                 // Return RGBA
-                return [r, g, b, 255];
+                //output[3] = 255;
+                return output;
             },
             lib: {
-                threshold: this.thresholdValue
+                threshold: this.thresholdValue,
+                Lerp : Lerp
             }
         });
         
@@ -424,9 +427,6 @@ export class MaptilerTest implements AfterViewInit {
         return imageLayer;
     }
 
-
-
-
     toggleStaticPng(): void {
         this.showStaticPng = !this.showStaticPng;
         if (this.showStaticPng) {
@@ -439,6 +439,8 @@ export class MaptilerTest implements AfterViewInit {
         }
     }
 
+
+
     private addStaticImageLayerPlain(): ImageLayer<Static> {
         // Image bounds in EPSG:4326 (WGS84)
         const bounds = [21.998751327743022, -18.077933333316892, 33.70958469341794, -8.202933333325873];
@@ -449,7 +451,7 @@ export class MaptilerTest implements AfterViewInit {
             // url: 'image/eth_pd_2020_1km_UNadj_c0a.png',
             //url: 'image/eth_pd_2020_1km_UNadj_c0acol.png',
             //url: 'image/eth_pd_2020_1km_UNadj0.png',
-            url: 'image/flood_map_ZMB_RP20.png',
+            url: 'image/flood_map_ZMB_RP20_f40.png',
                 imageExtent: bounds,
                 projection: 'EPSG:4326',
                 interpolate: false // Disable interpolation for crisp pixels

@@ -55,59 +55,77 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
         # Read the raster data
         data = src.read()
         
-        # Handle different band counts
+        # Only grey scale images are supported currently
         if src.count != 1:
             raise ValueError(f"Unsupported band count: {src.count}")
         
-        # Single band - grayscale
         img_array = data[0]
 
-        # Zero will be no data. Since everything is done in steps based on the factor, all data
-        # must then start at the first step
-        stepFactor = 6
-        img_array = img_array + stepFactor * 2
-
-        # Convert nodata values to 0
-        if src.nodata is not None:
-            img_array = np.where(img_array < 0, 0, img_array)
+        # Print lowest value above 0
+        values_above_zero = img_array[img_array > 0]
+        if len(values_above_zero) > 0:
+            print(f"Lowest value above 0: {np.min(values_above_zero)}")
+        else:
+            print("No values above 0 found")
         
+        # TODO: fix this so that the top outliers don't force us to use a
+        # very large range.
+        # Probably cap the max at the top 5th percentile.
+
+        # How many steps in the color gradation for the output.
+        stepFactor = 12
+        newMinimum = (255 / stepFactor) + 1 # add 1 to prevent rounding to 0
+        minVal = 0
         # This is used to increase the range of the steps to use the full range
         mult = round(255 / stepFactor)
-        # Normalize to the given factor
-        if img_array.dtype != np.uint8:
-            img_min = 0
-            img_max = np.nanmax(img_array)
-            print(f"Band 1 min: {img_min}, max: {img_max}. Actual min: {np.nanmin(img_array)}")
 
-            # Normalize to 0 to 1, then multiply by the step factor
-            # cast as int for rounding
-            img_array = ((img_array) / (img_max) * stepFactor).astype(np.uint8)
-            print(f"First pass. Should be <= than {stepFactor}. max: {np.nanmax(img_array)}, min: {np.nanmin(img_array)}")
+        # To prevent low values from rounding to zero, step up all values by one increment.
+        # This works as long as the NoData value is less than the step factor.
+        if src.nodata is not None and src.nodata + newMinimum > 0:
+            raise ValueError(f"Step factor of {stepFactor} is too large for the NoData value of {src.nodata}.")
+        img_array = img_array + newMinimum
 
-            # expand to 0-255 range
-            img_array = (img_array * mult).astype(np.uint8)
-            print(f"Second pass. Should be <= 255. max: {np.nanmax(img_array)}, min: {np.nanmin(img_array)}")
-
-
-        # Mask for no data values
-        # Is this needed or helping?
+        # NoData values are any value below zero. Set all to zero.
         if src.nodata is not None:
-            mask = data[0] == 0
-            img_array[mask] = 0
-        img = Image.fromarray(img_array, mode='L')
-                
+            img_array = np.where(img_array < 0, 0, img_array)
+
+        valueRange = np.nanmax(img_array)
+        print(f"Band 1 min: {minVal}, max: {valueRange}. Actual min: {np.nanmin(img_array)}")
+
+        # Normalize to 0 to 1, then multiply by the step factor
+        # cast as int for rounding
+        img_array = ((img_array / valueRange) * stepFactor).astype(np.uint8)
+        print(f"First pass. Should be <= than {stepFactor}. max: {np.nanmax(img_array)}, min: {np.nanmin(img_array)}")
+
+        # expand to 0-255 range, and cast again as uint8
+        #img_array = (img_array * mult).astype(np.uint8)
+        img_array = (img_array).astype(np.uint8)
+        print(f"Second pass. Should be <= 255. max: {np.nanmax(img_array)}, min: {np.nanmin(img_array)}")
+
+        # check value distribution
+        counts = np.bincount(img_array.flatten(), minlength=256)
+        print("Pixel value distribution (value: count):")
+        for value in range(256):
+            if counts[value] > 0:
+                print(f"  {value}: {counts[value]}")
+        
+
+        # Create an image with L mode (0-255 gray scale)
+        img = Image.fromarray(img_array, mode='L')                
 
         # Generate output filenames
         base_name = os.path.splitext(os.path.basename(tif_path))[0]
         png_path = os.path.join(output_dir, f"{base_name}_f{stepFactor}.png")
-        jpg_path = os.path.join(output_dir, f"{base_name}.jpg")
+        jpg_path = os.path.join(output_dir, f"{base_name}_f{stepFactor}.jpg")
         json_path = os.path.join(output_dir, f"{base_name}_metadata.json")
         
-        # Save PNG
-        # optimize=False skips optimization passes
+        # Save as PNG (lossless)
+        # optimize=True gets the best compression.
         img.save(png_path, optimize=True)
-        img.save(jpg_path, optimize=False, quality=10)
         print(f"\nPNG saved to: {png_path}")
+
+        # For debug and comparison, save a jpg on low quality (1 to 100 scale)
+        img.save(jpg_path, optimize=False, quality=10)
         
         # Save geo data as JSON
         with open(json_path, 'w') as f:
