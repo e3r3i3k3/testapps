@@ -351,7 +351,7 @@ export class MaptilerTest implements AfterViewInit {
         // Create the base static image source
         const staticSource = new Static({
             // url: 'image/flood_map_ZMB_RP2050.png',
-            url: 'image/flood_map_ZMB_RP20_f40.png',
+            url: 'image/flood_map_ZMB_RP20_f42.png',
             imageExtent: bounds,
             projection: 'EPSG:4326',
             interpolate: false // Disable interpolation for crisp pixels
@@ -370,8 +370,8 @@ export class MaptilerTest implements AfterViewInit {
                 }
                 
                 let value = pixel[0]/(255);
-                value = value * 10 * data.threshold
-                value -=  data.threshold;
+                value = value * 10 * data.threshold;
+                
                 // increase value and cap it
                 //value = Math.min(value * 4 * data.threshold, 1);
                 value = Math.min(value , 1);
@@ -451,7 +451,7 @@ export class MaptilerTest implements AfterViewInit {
             // url: 'image/eth_pd_2020_1km_UNadj_c0a.png',
             //url: 'image/eth_pd_2020_1km_UNadj_c0acol.png',
             //url: 'image/eth_pd_2020_1km_UNadj0.png',
-            url: 'image/flood_map_ZMB_RP20_f40.png',
+            url: 'image/flood_map_ZMB_RP20_f42.png',
                 imageExtent: bounds,
                 projection: 'EPSG:4326',
                 interpolate: false // Disable interpolation for crisp pixels

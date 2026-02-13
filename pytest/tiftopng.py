@@ -73,33 +73,32 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
         # Probably cap the max at the top 5th percentile.
 
         # How many steps in the color gradation for the output.
-        stepFactor = 12
-        newMinimum = (255 / stepFactor) + 1 # add 1 to prevent rounding to 0
-        minVal = 0
+        # 16 steps ends up with 16 + 2 = 18
+        stepFactor = 16
         # This is used to increase the range of the steps to use the full range
         mult = round(255 / stepFactor)
 
-        # To prevent low values from rounding to zero, step up all values by one increment.
-        # This works as long as the NoData value is less than the step factor.
-        if src.nodata is not None and src.nodata + newMinimum > 0:
-            raise ValueError(f"Step factor of {stepFactor} is too large for the NoData value of {src.nodata}.")
-        img_array = img_array + newMinimum
+        valueRange = np.nanmax(img_array)
+        print(f"Band 1 value range {valueRange}. Min: {np.nanmin(img_array)}")
+
+        # Normalize to 0 to 1, then multiply by the step factor
+        # cast as int for rounding
+        img_array = ((img_array / valueRange) * stepFactor).astype(np.int32)
+        print(f"First pass. Should be <= than {stepFactor}. max: {np.nanmax(img_array)}, min: {np.nanmin(img_array)}")
+
+        # step up all values by one increment, since 0 will now be no data.
+        # This works as long as the NoData value is greated than 0.
+        if src.nodata is not None and src.nodata >= 0:
+            raise ValueError(f"NoData value of {src.nodata} should be less than 0.")
+        img_array = img_array + 1
 
         # NoData values are any value below zero. Set all to zero.
         if src.nodata is not None:
             img_array = np.where(img_array < 0, 0, img_array)
 
-        valueRange = np.nanmax(img_array)
-        print(f"Band 1 min: {minVal}, max: {valueRange}. Actual min: {np.nanmin(img_array)}")
-
-        # Normalize to 0 to 1, then multiply by the step factor
-        # cast as int for rounding
-        img_array = ((img_array / valueRange) * stepFactor).astype(np.uint8)
-        print(f"First pass. Should be <= than {stepFactor}. max: {np.nanmax(img_array)}, min: {np.nanmin(img_array)}")
-
         # expand to 0-255 range, and cast again as uint8
         #img_array = (img_array * mult).astype(np.uint8)
-        img_array = (img_array).astype(np.uint8)
+        img_array = (img_array * mult).astype(np.uint8)
         print(f"Second pass. Should be <= 255. max: {np.nanmax(img_array)}, min: {np.nanmin(img_array)}")
 
         # check value distribution
@@ -125,7 +124,7 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
         print(f"\nPNG saved to: {png_path}")
 
         # For debug and comparison, save a jpg on low quality (1 to 100 scale)
-        img.save(jpg_path, optimize=False, quality=10)
+        #img.save(jpg_path, optimize=False, quality=10)
         
         # Save geo data as JSON
         with open(json_path, 'w') as f:
