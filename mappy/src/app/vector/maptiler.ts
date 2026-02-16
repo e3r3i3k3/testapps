@@ -10,7 +10,7 @@ import { attributions, GeoServerService, geoserverUrl, mapSources, RasterLayerIb
 import TileLayer from 'ol/layer/Tile';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, Projection } from 'ol/proj';
 import Attribution from 'ol/control/Attribution.js';
 import { defaults as defaultControls } from 'ol/control/defaults.js';
 import 'ol/ol.css';
@@ -59,8 +59,8 @@ export class MaptilerTest implements AfterViewInit {
     private initMap(): void {
         const key = superSecretApiKey;
         // Options: basic-v2 (smallest), streets-v2, outdoor-v2, dataviz, topo-v4
-        const dataJson = `https://api.maptiler.com/maps/basic-v2/style.json?key=${key}`;
-        const dataJson_new = `https://api.maptiler.com/maps/019c41d2-17c7-7e5e-9a47-d3b3f9515a5b/style.json?key=${key}`;
+        const dataJson__ = `https://api.maptiler.com/maps/basic-v2/style.json?key=${key}`;
+        const dataJson = `https://api.maptiler.com/maps/019c41d2-17c7-7e5e-9a47-d3b3f9515a5b/style.json?key=${key}`;
         
         const attribution = new Attribution({
             collapsible: false,
@@ -103,9 +103,14 @@ export class MaptilerTest implements AfterViewInit {
             controls: defaultControls({ attribution: false }).extend([attribution]),
             overlays: [this.popup],
             view: new View({
+
+                //projection: 'EPSG:4326', // lags everything since reprojecting base map is too much for the front end
                 constrainResolution: true,
                 center: fromLonLat([0, 0]),
-                zoom: 1
+                zoom: 1,
+                minZoom: 2,
+                maxZoom: 10,
+                
             })
         });
         
@@ -113,7 +118,7 @@ export class MaptilerTest implements AfterViewInit {
 
         // Non-edited sytle
         //  apply(this.map, styleJson);
-        
+
         // Fetch and customize the style
         fetch(dataJson)
             .then(response => response.json())
@@ -126,11 +131,21 @@ export class MaptilerTest implements AfterViewInit {
                     source: l.source
                 })));
                 
+                // Does this really work for perf?
+                // Performance optimization: Simplify geometry rendering
+                style.layers.forEach((layer: any) => {
+                    if (layer.type === 'line') {
+                        layer.paint = layer.paint || {};
+                        layer.layout = layer.layout || {};
+                        layer.layout['line-cap'] = 'butt'; // Faster than 'round'
+                        layer.layout['line-join'] = 'miter'; // Faster than 'round'
+                    }
+                });
                 
                 // Find the actual source name used by boundary layers
                 const boundaryLayer = style.layers.find((l: any) => l['source-layer'] === 'boundary');
                 const sourceName = boundaryLayer ? boundaryLayer.source : 'maptiler_planet';
-                
+                /*
                 // Add custom layer for Uganda admin level 1 areas - boundary is a line layer
                 style.layers.push({
                     'id': 'bbbbbb',
@@ -142,7 +157,7 @@ export class MaptilerTest implements AfterViewInit {
                         'line-width': 1,
                         'line-opacity': 0.8
                     }
-                });
+                });*/
                 
                 // Apply the modified style
                 apply(this.map, style);
@@ -150,7 +165,7 @@ export class MaptilerTest implements AfterViewInit {
             .catch(error => {
                 console.error('Error loading style:', error);
             });
-
+            
         // Add click handler
         this.map.on('click', (evt) => {
             const features = this.map.getFeaturesAtPixel(evt.pixel);
@@ -444,7 +459,7 @@ export class MaptilerTest implements AfterViewInit {
     private addStaticImageLayerPlain(): ImageLayer<Static> {
         // Image bounds in EPSG:4326 (WGS84)
         const bounds = [21.998751327743022, -18.077933333316892, 33.70958469341794, -8.202933333325873];
-        
+
         const imageLayer = new ImageLayer({
             source: new Static({
 
