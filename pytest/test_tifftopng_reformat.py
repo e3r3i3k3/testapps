@@ -1,4 +1,4 @@
-#!/Users/ehill/repos/testapps/pytest/.venv/bin/python3
+
 import rasterio
 from rasterio.plot import reshape_as_image
 from rasterio.warp import calculate_default_transform, reproject, Resampling
@@ -88,49 +88,57 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
         
         # Handle different band counts
         band_count = data.shape[0]
-        if band_count == 1:
-            # Single band - grayscale
-            img_array = data[0]
-            # Normalize to 0-255 range
-            if img_array.dtype != np.uint8:
-                img_min, img_max = np.nanmin(img_array), np.nanmax(img_array)
-                if img_min != img_max:
-                    img_array = ((img_array - img_min) / (img_max - img_min) * 255).astype(np.uint8)
-                else:
-                    img_array = np.zeros_like(img_array, dtype=np.uint8)
-            # Handle nodata values
-            if src.nodata is not None:
-                mask = data[0] == src.nodata
-                img_array[mask] = 0
-            img = Image.fromarray(img_array, mode='L')
-        elif band_count >= 3:
-            # Multi-band - assume RGB or RGBA
-            img_array = reshape_as_image(data)
-            # Take first 3 bands for RGB
-            if band_count > 3:
-                img_array = img_array[:, :, :3]
-            # Normalize if needed
-            if img_array.dtype != np.uint8:
-                img_min, img_max = np.nanmin(img_array), np.nanmax(img_array)
-                if img_min != img_max:
-                    img_array = ((img_array - img_min) / (img_max - img_min) * 255).astype(np.uint8)
-                else:
-                    img_array = np.zeros_like(img_array, dtype=np.uint8)
-            img = Image.fromarray(img_array, mode='RGB')
-        else:
+        if band_count != 1:
+
             raise ValueError(f"Unsupported band count: {band_count}")
         
-        compress_level = 0
+        # Single band - grayscale
+        img_array = data[0]
+        # Set all nodata values to -2
+        img_array[img_array == src.nodata] = -1
+        # add 1 to make nodata the new zero
+        img_array += 1
+
+        # log scale the data
+        img_array = np.log1p(img_array)
+
+        # set values below zero to zero
+        img_array[img_array < 0] = 0
+
+        # Normalize to 0-1 range for color interpolation
+        img_max = np.nanmax(img_array)
+        if img_max != 0:
+            normalized = img_array  / img_max 
+
+        # make bw array for output to png
+        img_array_bw = (normalized * 255).astype(np.uint8)
+        
+        # Create RGBA array - lerp between yellow (255, 255, 0) and red (255, 0, 0)
+        height, width = img_array.shape
+        img_array_rgba = np.zeros((height, width, 4), dtype=np.uint8)
+        img_array_rgba[:, :, 0] = 255  # R channel: constant 255
+        img_array_rgba[:, :, 1] = ((1 - normalized) * 255).astype(np.uint8)  # G channel: 255 to 0
+        img_array_rgba[:, :, 2] = 0  # B channel: constant 0
+        
+        # Set alpha: 0 for pixels with value 0, 255 for all others
+        img_array_rgba[:, :, 3] = np.where(img_array == 0, 0, 255)
+        
 
         # Generate output filenames
         base_name = os.path.splitext(os.path.basename(tif_path))[0]
-        png_path = os.path.join(output_dir, f"{base_name}_c{compress_level}_b3857.png")
+        png_path = os.path.join(output_dir, f"{base_name}_3857.png")
+        png_path_bw = os.path.join(output_dir, f"{base_name}_bw_3857.png")
         json_path = os.path.join(output_dir, f"{base_name}_metadata_b3857.json")
+        
+        # Create PIL Image from RGBA array
+        img = Image.fromarray(img_array_rgba, mode='RGBA')
+        img_bw = Image.fromarray(img_array_bw, mode='L')
         
         # Save PNG with highest quality settings
         # compress_level=0 means no compression (highest quality, largest file)
         # optimize=False skips optimization passes
-        img.save(png_path, compress_level, optimize=False)
+        img.save(png_path, optimize=True)
+        img_bw.save(png_path_bw, optimize=True)
         print(f"\nPNG saved to: {png_path}")
         
         # Save geo data as JSON

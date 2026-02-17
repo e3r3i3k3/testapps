@@ -366,7 +366,7 @@ export class MaptilerTest implements AfterViewInit {
         // Create the base static image source
         const staticSource = new Static({
             // url: 'image/flood_map_ZMB_RP2050.png',
-            url: 'image/flood_map_ZMB_RP20_f42.png',
+            url: 'image/flood_map_ZMB_RP20_f16.png',
             imageExtent: bounds,
             projection: 'EPSG:4326',
             interpolate: false // Disable interpolation for crisp pixels
@@ -469,14 +469,16 @@ export class MaptilerTest implements AfterViewInit {
             // url: 'image/eth_pd_2020_1km_UNadj_c0a.png',
             //url: 'image/eth_pd_2020_1km_UNadj_c0acol.png',
             //url: 'image/eth_pd_2020_1km_UNadj0.png',
-            // flood_map_ZMB_RP20_c0_b3857.png
-            url: 'image/flood_map_ZMB_RP20_f42.png',
+                url: 'image/flood_map_ZMB_RP20_c0_b3857.png',
+            //url: 'image/flood_map_ZMB_RP20_f42.png',
                 imageExtent: bounds,
                 // projection: 'EPSG:4326',
                 projection: 'EPSG:3857',
                 interpolate: false // Disable interpolation for crisp pixels
+                
             }),
             opacity: 0.7,
+
         });
 
         this.map.addLayer(imageLayer);
