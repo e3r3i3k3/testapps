@@ -1,3 +1,4 @@
+#!/Users/ehill/repos/testapps/pytest/.venv/bin/python3
 import rasterio
 from rasterio.plot import reshape_as_image
 from rasterio.warp import calculate_default_transform, reproject, Resampling
@@ -140,7 +141,8 @@ def tif_to_png_with_metadata(tif_path, output_dir='out'):
 
 if __name__ == "__main__":
     # Process the specified GeoTIFF
-    tif_file = "TestData/eth_pd_2020_1km_UNadj.tif"
+    tif_file = "TestData/flood_map_ZMB_RP20.tif"
+    #tif_file = "TestData/eth_pd_2020_1km_UNadj.tif"
     
     if os.path.exists(tif_file):
         tif_to_png_with_metadata(tif_file)

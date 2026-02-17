@@ -112,7 +112,8 @@ export class VerticalTest implements AfterViewInit {
                 url: mapSources[this.selection],
                 attributions: attributions[this.selection],
                 maxZoom: 19
-            })
+            }),
+            //cacheSize: 5096 // not sure if this is needed
         });
 
         // Set up beforeoperations listener to pass values to the shader

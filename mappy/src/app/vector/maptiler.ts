@@ -458,7 +458,10 @@ export class MaptilerTest implements AfterViewInit {
 
     private addStaticImageLayerPlain(): ImageLayer<Static> {
         // Image bounds in EPSG:4326 (WGS84)
-        const bounds = [21.998751327743022, -18.077933333316892, 33.70958469341794, -8.202933333325873];
+        //const bounds = [21.998751327743022, -18.077933333316892, 33.70958469341794, -8.202933333325873];
+
+        // Bounds in EPSG:3857 (Web Mercator)   
+        const bounds = [2448889.795892204, -2046712.1534877932, 3752503.10182657, -916281.9228305662];
 
         const imageLayer = new ImageLayer({
             source: new Static({
@@ -466,9 +469,11 @@ export class MaptilerTest implements AfterViewInit {
             // url: 'image/eth_pd_2020_1km_UNadj_c0a.png',
             //url: 'image/eth_pd_2020_1km_UNadj_c0acol.png',
             //url: 'image/eth_pd_2020_1km_UNadj0.png',
+            // flood_map_ZMB_RP20_c0_b3857.png
             url: 'image/flood_map_ZMB_RP20_f42.png',
                 imageExtent: bounds,
-                projection: 'EPSG:4326',
+                // projection: 'EPSG:4326',
+                projection: 'EPSG:3857',
                 interpolate: false // Disable interpolation for crisp pixels
             }),
             opacity: 0.7,
