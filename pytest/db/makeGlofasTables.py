@@ -1,6 +1,6 @@
 """
-Red Cross Branches Table Creation
-Loads red_cross_branches_*.csv files and creates a PostGIS-enabled table.
+Glofas Stations Table Creation
+Loads glofas_stations_*.csv files and creates a PostGIS-enabled table.
 """
 import csv
 import os
@@ -8,14 +8,22 @@ import glob
 from postGisConnect import get_db_connection, enable_postgis, create_spatial_table, create_spatial_index
 
 
+# Example data in CSV
+# stationCode,stationName,lat,lon,fid
+# G4730,Gambie A Gouloumbo,13.4667,-13.7333,G4730
+# G4752,Senegal A Matam -Donnee Reconstituee-,15.65,-13.25,G4752
+# G4877,Faleme A Fadougou Drague -Donnee Reconstituee-,12.5167,-11.3833,G4877
+# G4729,Koulountou A Missirah-Gonasse,13.2,-13.6167,G4729
+
 # Configuration
 CSV_DIR = "/Users/ehill/repos/IBF-system/services/API-service/src/scripts/git-lfs/point-layers/"
-TABLE_NAME = "red_cross_branches"
-filenamePattern = "red_cross_branches_*.csv"
+TABLE_NAME = "glofas_stations"
+filenamePattern = "glofas_stations_*.csv"
 
-def load_red_cross_data(csv_dir):
+
+def load_glofas_data(csv_dir):
     """
-    Load all red_cross_branches_*.csv files from the specified directory.
+    Load all glofas_stations_*.csv files from the specified directory.
     
     Args:
         csv_dir: Directory containing the CSV files
@@ -33,9 +41,9 @@ def load_red_cross_data(csv_dir):
     
     all_data = []
     for csv_file in csv_files:
-        # Extract country code from filename (e.g., red_cross_branches_SDN.csv -> SDN)
+        # Extract country code from filename (e.g., glofas_stations_SEN.csv -> SEN)
         basename = os.path.basename(csv_file)
-        country_code = basename.replace("red_cross_branches_", "").replace(".csv", "")
+        country_code = basename.replace("glofas_stations_", "").replace(".csv", "")
         
         print(f"Loading {basename} (country: {country_code})...")
         
@@ -54,22 +62,20 @@ def load_red_cross_data(csv_dir):
     return all_data
 
 
-def create_red_cross_table(conn):
+def create_glofas_table(conn):
     """
-    Create the red_cross_branches table with spatial capabilities.
+    Create the glofas_stations table with spatial capabilities.
     
     Args:
         conn: Database connection object
     """
     columns = {
         'id': 'SERIAL PRIMARY KEY',
-        'branchName': 'VARCHAR(255)',
+        'fid': 'VARCHAR(50)',
+        'stationCode': 'VARCHAR(50)',
+        'stationName': 'VARCHAR(255)',
         'lat': 'DOUBLE PRECISION',
         'lon': 'DOUBLE PRECISION',
-        'numberOfVolunteers': 'INTEGER',
-        'contactPerson': 'VARCHAR(255)',
-        'contactNumber': 'VARCHAR(100)',
-        'contactAddress': 'VARCHAR(255)',
         'country': 'VARCHAR(3)',
         'geom': 'GEOMETRY(Point, 4326)'
     }
@@ -77,9 +83,9 @@ def create_red_cross_table(conn):
     create_spatial_table(conn, TABLE_NAME, columns, drop_if_exists=True)
 
 
-def insert_red_cross_data(conn, data):
+def insert_glofas_data(conn, data):
     """
-    Insert red cross branch data into the table.
+    Insert glofas station data into the table.
     
     Args:
         conn: Database connection object
@@ -92,23 +98,22 @@ def insert_red_cross_data(conn, data):
             lon_value = round(float(row['lon']), 5) if row['lon'] else None
             
             cur.execute("""
-                INSERT INTO red_cross_branches 
-                (branchName, lat, lon, numberOfVolunteers, contactPerson, contactNumber, contactAddress, country, geom)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))
+                INSERT INTO glofas_stations 
+                (fid, stationCode, stationName, lat, lon, country, geom)
+                VALUES (%s, %s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))
             """, (
-                row['branchName'],
+                row['fid'],
+                row['stationCode'],
+                row['stationName'],
                 lat_value,
                 lon_value,
-                int(row['numberOfVolunteers']) if row['numberOfVolunteers'] else None,
-                row['contactPerson'] if row['contactPerson'] else None,
-                row['contactNumber'] if row['contactNumber'] else None,
-                row['contactAddress'] if row['contactAddress'] else None,
                 row['country'],
                 lon_value,
                 lat_value
             ))
         conn.commit()
     print(f"Inserted {len(data)} records into the table!")
+
 
 
 def verify_data(conn):
@@ -119,24 +124,24 @@ def verify_data(conn):
         conn: Database connection object
     """
     with conn.cursor() as cur:
-        cur.execute(f"SELECT id, branchName, lat, lon, country, ST_AsText(geom) as geometry FROM {TABLE_NAME} LIMIT 3;")
+        cur.execute(f"SELECT id, fid, stationCode, stationName, lat, lon, country, ST_AsText(geom) as geometry FROM {TABLE_NAME} LIMIT 3;")
         records = cur.fetchall()
         print("\nSample records from the database:")
         for record in records:
             print(record)
 
 
-def create_red_cross_branches_table():
+def create_glofas_stations_table():
     """
-    Main function to create the red_cross_branches table.
+    Main function to create the glofas_stations table.
     Loads CSV data, creates table, inserts data, and creates spatial index.
     """
     print("="*50)
-    print("Creating Red Cross Branches Table")
+    print("Creating Glofas Stations Table")
     print("="*50 + "\n")
     
     # Load data from CSV files
-    data = load_red_cross_data(CSV_DIR)
+    data = load_glofas_data(CSV_DIR)
     
     # Connect to database and create table
     with get_db_connection() as conn:
@@ -144,10 +149,10 @@ def create_red_cross_branches_table():
         enable_postgis(conn)
         
         # Create table
-        create_red_cross_table(conn)
+        create_glofas_table(conn)
         
         # Insert data
-        insert_red_cross_data(conn, data)
+        insert_glofas_data(conn, data)
         
         # Create spatial index
         create_spatial_index(conn, TABLE_NAME)
@@ -166,5 +171,4 @@ def create_red_cross_branches_table():
 
 
 if __name__ == "__main__":
-    create_red_cross_branches_table()
-
+    create_glofas_stations_table()
