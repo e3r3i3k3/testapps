@@ -12,6 +12,9 @@ import TileLayer from 'ol/layer/Tile';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import { fromLonLat, transformExtent } from 'ol/proj';
+import GeoJSON from 'ol/format/GeoJSON';
+import { Fill, Stroke, Style } from 'ol/style';
+import CircleStyle from 'ol/style/Circle';
 
 
 @Component({
@@ -54,11 +57,47 @@ export class HippoTest implements AfterViewInit {
     }
 
 
+    glofasUri = 'http://localhost:9000/collections/public.glofas_stations/items?limit=10000';
+    glofasUriFilter = 'http://localhost:9000/collections/public.glofas_stations/items?filter=country%3D%27ETH%27';
+
+    private pointsLayer: VectorLayer | null = null;
 
     togglePoints(): void {
+        this.showPoints = !this.showPoints;
+        if (this.showPoints) {
+            // Remove previous layer if exists
+            if (this.pointsLayer) {
+                this.map.removeLayer(this.pointsLayer);
+            }
+            this.pointsLayer = new VectorLayer({
+                source: new VectorSource({
+                    url: this.glofasUri,
+                    format: new GeoJSON(),
+                }),
+                style: new Style({
+                    image: new CircleStyle({
+                        radius: 6,
+                        fill: new Fill({
+                            color: '#FF1493', // Pink color
+                        }),
+                        stroke: new Stroke({
+                            color: '#C71585', // Darker pink border
+                            width: 2,
+                        }),
+                    }),
+                }),
+            });
 
-
+            this.map.addLayer(this.pointsLayer);
+        } else {
+            // Remove points layer
+            if (this.pointsLayer) {
+                this.map.removeLayer(this.pointsLayer);
+                this.pointsLayer = null;
+            }
+        }
     }
+
 
 
 
