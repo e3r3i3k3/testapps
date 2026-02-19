@@ -16,9 +16,13 @@ sys.path.append(point_dir)
 from postGisConnect import get_db_connection, enable_postgis, create_spatial_index
 
 # Configuration
-PBF_DIR = "../input/"
+# Get the directory where this script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+PBF_DIR = os.path.join(script_dir, "..", "testinput")
 TABLE_NAME = "osm_features"
 filenamePattern = "*.osm.pbf"
+
+maxItems = 10000
 
 # Country code mapping (filename prefix to ISO3 code)
 COUNTRY_CODES = {
@@ -26,6 +30,7 @@ COUNTRY_CODES = {
     'uganda': 'UGA',
     'senegal': 'SEN',
     'sudan': 'SDN',
+    'djibouti': 'DJI',
 }
 
 
@@ -52,19 +57,27 @@ class OSMHandler(osmium.SimpleHandler):
     Handler for processing OSM data with pyosmium.
     Collects ways and relations (polygons/multipolygons).
     """
-    def __init__(self):
+    def __init__(self, max_features=None):
         super(OSMHandler, self).__init__()
         self.features = []
         self.node_cache = {}
+        self.max_features = max_features
+        self.skipped_count = 0
     
     def node(self, n):
         """Cache node locations for building geometries."""
-        self.node_cache[n.id] = (n.location.lon, n.location.lat)
+        if n.location.valid():
+            self.node_cache[n.id] = (n.location.lon, n.location.lat)
     
     def way(self, w):
         """Process OSM ways (roads, buildings, etc.)."""
-        # Skip ways without tags or without enough nodes for a polygon
-        if not w.tags or len(w.nodes) < 3:
+        # Stop if we've reached the max features limit
+        if self.max_features and len(self.features) >= self.max_features:
+            return
+        
+        # Skip ways without tags or without enough nodes
+        if not w.tags or len(w.nodes) < 2:
+            self.skipped_count += 1
             return
         
         # Check if it's a closed way (polygon)
@@ -76,11 +89,12 @@ class OSMHandler(osmium.SimpleHandler):
             if node.ref in self.node_cache:
                 coords.append(self.node_cache[node.ref])
         
-        if len(coords) < 3:
+        if len(coords) < 2:
+            self.skipped_count += 1
             return
         
         # Build feature
-        geom_type = "Polygon" if is_closed else "LineString"
+        geom_type = "Polygon" if is_closed and len(coords) >= 3 else "LineString"
         
         if geom_type == "Polygon":
             # Close the ring if not already closed
@@ -106,12 +120,27 @@ class OSMHandler(osmium.SimpleHandler):
     
     def area(self, a):
         """Process OSM areas (relations that form polygons)."""
+        # Stop if we've reached the max features limit
+        if self.max_features and len(self.features) >= self.max_features:
+            return
+        
         if not a.tags:
+            self.skipped_count += 1
             return
         
         try:
-            # Get the geometry as WKB and convert to coordinates
+            # Get the geometry as WKB
             wkb = osmium.geom.WKBFactory().create_multipolygon(a)
+            
+            # Validate WKB data - should be bytes and have valid endian flag
+            if not isinstance(wkb, bytes) or len(wkb) < 5:
+                self.skipped_count += 1
+                return
+            
+            # Check endian flag (first byte should be 0 or 1)
+            if wkb[0] not in (0, 1):
+                self.skipped_count += 1
+                return
             
             feature = {
                 'osm_id': str(a.id),
@@ -119,12 +148,13 @@ class OSMHandler(osmium.SimpleHandler):
                 'name': a.tags.get('name'),
                 'type': a.tags.get('building') or a.tags.get('landuse') or a.tags.get('amenity'),
                 'tags': dict(a.tags),
-                'geometry_wkb': wkb
+                'geometry_wkb': bytes(wkb)  # Ensure it's proper bytes
             }
             
             self.features.append(feature)
         except Exception as e:
             # Skip areas that can't be converted to geometry
+            self.skipped_count += 1
             pass
 
 
@@ -157,22 +187,25 @@ def load_osm_pbf_data(pbf_dir):
     return file_data
 
 
-def parse_pbf_file(pbf_file):
+def parse_pbf_file(pbf_file, max_features=maxItems):
     """
     Parse OSM PBF file using pyosmium.
     
     Args:
         pbf_file: Path to the PBF file
+        max_features: Maximum number of features to extract (None for all)
         
     Returns:
         List of feature dictionaries
     """
     print(f"Parsing {os.path.basename(pbf_file)} with pyosmium...")
+    print(f"  Limiting to first {max_features} features for debug..." if max_features else "  Extracting all features...")
     
-    handler = OSMHandler()
+    handler = OSMHandler(max_features=max_features)
     handler.apply_file(pbf_file, locations=True)
     
     print(f"  Extracted {len(handler.features)} features")
+    print(f"  Skipped {handler.skipped_count} items (no tags, invalid geometry, etc.)")
     return handler.features
 
 
@@ -212,10 +245,24 @@ def insert_osm_data(conn, features, country_code):
     """
     with conn.cursor() as cur:
         inserted = 0
-        for feature in features:
+        failed = 0
+        
+        for i, feature in enumerate(features):
+            # Use savepoint to isolate each insert - if it fails, we can rollback just this one
+            savepoint_name = f"sp_{i}"
             try:
+                cur.execute(f"SAVEPOINT {savepoint_name}")
+                
                 # Handle WKB geometry (from areas) or GeoJSON geometry (from ways)
                 if 'geometry_wkb' in feature:
+                    # Validate WKB before inserting
+                    wkb = feature['geometry_wkb']
+                    if not isinstance(wkb, bytes) or len(wkb) < 5 or wkb[0] not in (0, 1):
+                        print(f"    Feature {i+1}: Skipped - invalid WKB data")
+                        cur.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
+                        failed += 1
+                        continue
+                    
                     # Use WKB directly
                     cur.execute(f"""
                         INSERT INTO {TABLE_NAME} 
@@ -228,12 +275,15 @@ def insert_osm_data(conn, features, country_code):
                         feature.get('name'),
                         feature.get('type'),
                         json.dumps(feature.get('tags', {})),
-                        feature['geometry_wkb']
+                        wkb
                     ))
                 else:
                     # Convert GeoJSON to geometry
                     geom = feature.get('geometry', {})
                     if not geom:
+                        print(f"    Feature {i+1}: Skipped - no geometry")
+                        cur.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
+                        failed += 1
                         continue
                     
                     geom_json = json.dumps(geom)
@@ -253,13 +303,24 @@ def insert_osm_data(conn, features, country_code):
                         geom_json
                     ))
                 
+                # Release savepoint if successful
+                cur.execute(f"RELEASE SAVEPOINT {savepoint_name}")
                 inserted += 1
+                
+                # Show progress for first 10 and every 100th thereafter
+                if inserted <= 10 or inserted % (maxItems //100) == 0:
+                    print(f"    Inserted feature {inserted}: {feature.get('name', 'unnamed')} ({feature.get('type', 'unknown type')})")
+                    
             except Exception as e:
-                # Skip features that fail to insert
+                # Rollback to savepoint to recover from error without aborting transaction
+                cur.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
+                failed += 1
+                print(f"    Feature {i+1}: Failed to insert - {str(e)[:100]}")
                 continue
         
         conn.commit()
     
+    print(f"  Successfully inserted: {inserted}, Failed: {failed}")
     return inserted
 
 
@@ -271,23 +332,64 @@ def verify_data(conn):
         conn: Database connection object
     """
     with conn.cursor() as cur:
+        # Get total count
+        cur.execute(f"SELECT COUNT(*) FROM {TABLE_NAME};")
+        total_count = cur.fetchone()[0]
+        print(f"\n{'='*60}")
+        print(f"Total records in table: {total_count}")
+        print(f"{'='*60}\n")
+        
+        # Count by country
+        cur.execute(f"SELECT country, COUNT(*) FROM {TABLE_NAME} GROUP BY country ORDER BY country;")
+        counts = cur.fetchall()
+        print("Records by country:")
+        for country, count in counts:
+            print(f"  {country}: {count:,}")
+        
+        # Count by type
         cur.execute(f"""
-            SELECT id, country, osm_id, name, type, 
-                   ST_GeometryType(geom) as geom_type
+            SELECT type, COUNT(*) as cnt 
             FROM {TABLE_NAME} 
+            WHERE type IS NOT NULL 
+            GROUP BY type 
+            ORDER BY cnt DESC 
+            LIMIT 10;
+        """)
+        type_counts = cur.fetchall()
+        print("\nTop 10 feature types:")
+        for ftype, count in type_counts:
+            print(f"  {ftype}: {count:,}")
+        
+        # Sample records with details
+        cur.execute(f"""
+            SELECT id, country, osm_id, name, type, other_tags,
+                   ST_GeometryType(geom) as geom_type,
+                   ST_NPoints(geom) as num_points,
+                   ST_AsText(ST_Centroid(geom)) as centroid
+            FROM {TABLE_NAME} 
+            WHERE name IS NOT NULL
             LIMIT 5;
         """)
         records = cur.fetchall()
-        print("\nSample records from the database:")
-        for record in records:
-            print(record)
         
-        # Count by country
-        cur.execute(f"SELECT country, COUNT(*) FROM {TABLE_NAME} GROUP BY country;")
-        counts = cur.fetchall()
-        print("\nRecords by country:")
-        for country, count in counts:
-            print(f"  {country}: {count}")
+        print(f"\n{'='*60}")
+        print("Sample records with details:")
+        print(f"{'='*60}")
+        for i, record in enumerate(records, 1):
+            print(f"\nRecord {i}:")
+            print(f"  ID: {record[0]}")
+            print(f"  Country: {record[1]}")
+            print(f"  OSM ID: {record[2]}")
+            print(f"  Name: {record[3]}")
+            print(f"  Type: {record[4]}")
+            if record[5]:  # other_tags
+                tags = json.loads(record[5]) if isinstance(record[5], str) else record[5]
+                print(f"  Tags: {list(tags.keys())[:5]}")  # Show first 5 tag keys
+            print(f"  Geometry Type: {record[6]}")
+            print(f"  Number of Points: {record[7]}")
+            print(f"  Centroid: {record[8]}")
+        
+        print(f"\n{'='*60}\n")
 
 
 def create_osm_features_table():
@@ -321,8 +423,8 @@ def create_osm_features_table():
         for pbf_file, country_code in pbf_files:
             print(f"\nProcessing {os.path.basename(pbf_file)}...")
             
-            # Parse PBF file
-            features = parse_pbf_file(pbf_file)
+            # Parse PBF file (limited to 100 features for debug)
+            features = parse_pbf_file(pbf_file, max_features=maxItems)
             
             if not features:
                 print(f"  No features extracted from {os.path.basename(pbf_file)}")
