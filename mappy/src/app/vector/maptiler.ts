@@ -109,7 +109,7 @@ export class MaptilerTest implements AfterViewInit {
                 center: fromLonLat([0, 0]),
                 zoom: 1,
                 minZoom: 2,
-                maxZoom: 10,
+                maxZoom: 20,
                 
             })
         });
