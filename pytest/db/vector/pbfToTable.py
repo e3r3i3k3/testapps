@@ -248,8 +248,8 @@ def insert_osm_data(conn, features, country_code):
         failed = 0
         
         for i, feature in enumerate(features):
-            # Use savepoint to isolate each insert - if it fails, we can rollback just this one
-            savepoint_name = f"sp_{i}"
+            # Use same savepoint name (reused for each insert)
+            savepoint_name = "sp"
             try:
                 cur.execute(f"SAVEPOINT {savepoint_name}")
                 
