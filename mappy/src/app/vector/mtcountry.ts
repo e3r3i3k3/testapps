@@ -56,11 +56,11 @@ export class MtCountryTest implements AfterViewInit {
             const isSelected = iso_a2 === this.selectedCountry;
             return new Style({
                 fill: new Fill({
-                    color: isSelected ? [0, 0, 255, 0.5] : [255, 0, 0, 0.3],
+                    color: isSelected ? "#b3b3b3" : "#e0e0e0",
                 }),
                 stroke: new Stroke({
-                    color: isSelected ? [0, 0, 255, 1] : [255, 255, 0, 1],
-                    width: 2,
+                    color: isSelected ? "#a4a4a4" : "#a4a4a4",
+                    width: 1,
                 }),
             });
         },
@@ -78,10 +78,10 @@ export class MtCountryTest implements AfterViewInit {
             const isSelected = iso_a2 === this.selectedCountry;
             return new Style({
                 fill: new Fill({
-                    color: isSelected ? [0, 0, 255, 0.5] : [0, 255, 0, 0.3],
+                    color: isSelected ? "rgb(251, 186, 89)" : "rgb(243, 255, 17)",
                 }),
                 stroke: new Stroke({
-                    color: isSelected ? [0, 0, 255, 1] : [0, 255, 255, 1],
+                    color: isSelected ? "rgb(0, 255, 38)" : "rgb(131, 225, 156)",
                     width: 2,
                 }),
             });
@@ -104,10 +104,10 @@ export class MtCountryTest implements AfterViewInit {
 
         const baseMap = new WebGLTileLayer({
             opacity: 1,
-            source: new Source({
-                url: mapSources[this.selection],
-                attributions: attributions[this.selection],
-            }),
+            //source: new Source({
+             //   url: mapSources[this.selection],
+            //    attributions: attributions[this.selection],
+            //}),
         });
 
 
@@ -161,6 +161,8 @@ export class MtCountryTest implements AfterViewInit {
 
 
 }
+
+
 
 /**#
              opacity: 1,

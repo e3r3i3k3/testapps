@@ -38,7 +38,8 @@ function TopoShade2(pixels: number[][] | ImageData[], data: any) {
     const b0 = [174, 153, 115];
     const b1 = [222, 187, 105];
 
-    const seaColor = [58, 27, 80];
+    const seaColor = [0, 0, 0];
+
 
     // const colors = [c0, c1, c2, c3, c4, c5];
     const colors = [b0, b1, b0, b1, b0, b1];
@@ -48,13 +49,16 @@ function TopoShade2(pixels: number[][] | ImageData[], data: any) {
 
     const th = data.threshold; // threshold
     const sealevel = 100000;
+    const maxval = 256 * 256 * 256 / (100 * th);
+    const minval = 10;
 
-    let output = [22, 22, 40, 255];
+    let output = [0, 0, 0, 255];
     if (Array.isArray(pixel)) {
         if (pixel[3]) {
 
             let height = (-sealevel + pixel[0] * 256 * 256 + pixel[1] * 256 + pixel[2]);
-            height = Math.max(0, height);
+            height = Math.max(0, height)  ;
+
 
             let cc = colors[0];
 
@@ -63,7 +67,15 @@ function TopoShade2(pixels: number[][] | ImageData[], data: any) {
                 cc = seaColor;
             }
             else {
+                const relHeight = height / maxval;
+                let c = Math.floor(relHeight * 255) + minval;
 
+                // clamp
+                c = Math.min(255, c);
+
+                output = [c, c,c, 255];
+
+                /*
             cc = colors[0];
             height = Math.floor(height / (500 * th));
             let level = height % levels;
@@ -71,118 +83,120 @@ function TopoShade2(pixels: number[][] | ImageData[], data: any) {
 
             output[0] = cc[0];
             output[1] = cc[1];
-            output[2] = cc[2];
+            output[2] = cc[2];*/
+
+            }
         }
+        }
+        return output;
     }
-    return output;
-}
 
 
-@Component({
-    selector: 'app-topo',
-    imports: [],
-    templateUrl: './topo.html',
-    styleUrl: '../../styles.css'
-})
-export class TopoTest implements AfterViewInit {
-    ngAfterViewInit(): void {
-        this.initMap();
-        //this.setupMapEventListeners();
-    }
-    private map!: Mapp;
-    private baseLayer!: TileLayer<XYZ>;
-    private roadsLayer?: VectorLayer<VectorSource>;
-    private bordersLayer?: VectorLayer<VectorSource>;
-    private rasterLayerEth?: TileLayer<TileWMS>;
-    private rasterLayerUga1?: TileLayer<TileWMS>;
-    private rasterLayerUga2?: ImageLayer<RasterSource>;
-    selection = 7;
-    showRoads = false;
-    showBorders = false;
-    showRasterLayerEth = false;
-    showRasterLayerUga1 = false;
-    showRasterLayerUga2 = false;
-    threshold = 7;
+    @Component({
+        selector: 'app-topo',
+        imports: [],
+        templateUrl: './topo.html',
+        styleUrl: '../../styles.css'
+    })
+    export class TopoTest implements AfterViewInit {
+        ngAfterViewInit(): void {
+            this.initMap();
+            //this.setupMapEventListeners();
+        }
+        private map!: Mapp;
+        private baseLayer!: TileLayer<XYZ>;
+        private roadsLayer?: VectorLayer<VectorSource>;
+        private bordersLayer?: VectorLayer<VectorSource>;
+        private rasterLayerEth?: TileLayer<TileWMS>;
+        private rasterLayerUga1?: TileLayer<TileWMS>;
+        private rasterLayerUga2?: ImageLayer<RasterSource>;
+        selection = 7;
+        showRoads = false;
+        showBorders = false;
+        showRasterLayerEth = false;
+        showRasterLayerUga1 = false;
+        showRasterLayerUga2 = false;
+        threshold = 7;
 
-    private rasterSource?: RasterSource;
+        private rasterSource?: RasterSource;
 
-    // Caching
-    private loadedBounds?: [number, number, number, number];
-    private cachedRoads: any[] = [];
-    private loadedBordersBounds?: [number, number, number, number];
-    private cachedBorders: any[] = [];
+        // Caching
+        private loadedBounds?: [number, number, number, number];
+        private cachedRoads: any[] = [];
+        private loadedBordersBounds?: [number, number, number, number];
+        private cachedBorders: any[] = [];
 
-    constructor(private geoServerService: GeoServerService) { }
+        constructor(private geoServerService: GeoServerService) { }
 
-    private initMap(): void {
+        private initMap(): void {
 
-        this.rasterSource = new RasterSource({
-            sources: [
-                new XYZ({
+            this.rasterSource = new RasterSource({
+                sources: [
+                    new XYZ({
+                        url: mapSources[this.selection],
+                        attributions: attributions[this.selection],
+                        maxZoom: 19,
+                        crossOrigin: 'anonymous'
+                    }),
+                ],
+                //operationType: 'image', // Return ImageData instead of pixel arrays
+                // operation: SetSingleColor,
+
+                //operation: SplitLayers,
+                operation: TopoShade2
+            });
+
+            this.baseLayer = new TileLayer({
+                source: new XYZ({
                     url: mapSources[this.selection],
                     attributions: attributions[this.selection],
-                    maxZoom: 19,
-                    crossOrigin: 'anonymous'
-                }),
-            ],
-            //operationType: 'image', // Return ImageData instead of pixel arrays
-            // operation: SetSingleColor,
+                    maxZoom: 19
+                })
+            });
 
-            //operation: SplitLayers,
-            operation: TopoShade2
-        });
+            // Set up beforeoperations listener to pass values to the shader
+            this.rasterSource.on('beforeoperations', (event) => {
+                event.data.threshold = this.threshold;
+            });
 
-        this.baseLayer = new TileLayer({
-            source: new XYZ({
-                url: mapSources[this.selection],
-                attributions: attributions[this.selection],
-                maxZoom: 19
-            })
-        });
+            const simpleLayer = new TileLayer({
+                source: new XYZ({
+                    url: mapSources[this.selection],
+                    attributions: attributions[this.selection],
+                    maxZoom: 19
+                })
+            });
 
-        // Set up beforeoperations listener to pass values to the shader
-        this.rasterSource.on('beforeoperations', (event) => {
-            event.data.threshold = this.threshold;
-        });
-
-         const simpleLayer = new TileLayer({
-      source: new XYZ({
-        url: mapSources[this.selection],
-        attributions: attributions[this.selection],
-        maxZoom: 19
-      })
-    });
-
-        this.map = new Mapp({
-            layers: [
-                simpleLayer,
-                new ImageLayer({
-                    source: this.rasterSource,
-                }),
-            ],
-            target: 'ol-map',
-            //layers: [this.baseLayer],
-            view: new View({
-                center: fromLonLat([34.0, 3.0]), // [longitude, latitude]
-                zoom: 6
-            })
-        });
+            this.map = new Mapp({
+                layers: [
+                    simpleLayer,
+                    new ImageLayer({
+                        source: this.rasterSource,
+                    }),
+                ],
+                target: 'ol-map',
+                //layers: [this.baseLayer],
+                view: new View({
+                    center: fromLonLat([34.0, 3.0]), // [longitude, latitude]
+                    zoom: 6
+                })
+            });
 
 
-    }
-
-
-
-    onThresholdChange(event: Event): void {
-        const input = event.target as HTMLInputElement;
-        this.threshold = parseInt(input.value);
-        const output = document.getElementById('thresholdOut');
-        if (output) {
-            output.textContent = input.value;
         }
-        this.rasterSource?.changed();
+
+
+
+        onThresholdChange(event: Event): void {
+            const input = event.target as HTMLInputElement;
+            this.threshold = parseInt(input.value);
+            const output = document.getElementById('thresholdOut');
+            if (output) {
+                output.textContent = input.value;
+            }
+            this.rasterSource?.changed();
+        }
+
+
+
     }
-
-
-
-}
