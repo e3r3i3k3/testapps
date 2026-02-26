@@ -26,6 +26,7 @@ import { Fill, Stroke, Style } from 'ol/style';
 
 import WebGLVectorLayer from 'ol/layer/WebGLVector.js';
 import MVT from 'ol/format/MVT';
+import { CountryData } from './countries';
 
 
 
@@ -54,12 +55,25 @@ export class MtCountryTest implements AfterViewInit {
         style: (feature) => {
             const iso_a2 = feature.get('iso_a2');
             const isSelected = iso_a2 === this.selectedCountry;
+            const countryInfo = CountryData.get(iso_a2);
+            const isIbfSupported = countryInfo?.ibfSupported ?? false;
+            
+            let fillColor: string;
+            let strokeColor: string;
+            
+            if (isIbfSupported) {
+                fillColor = isSelected ? "#d63384" : "#f8bbd9";  
+            } else {
+                fillColor = isSelected ? "#b3b3b3" : "#e0e0e0";
+            }
+                strokeColor = "#a4a4a4";
+            
             return new Style({
                 fill: new Fill({
-                    color: isSelected ? "#b3b3b3" : "#e0e0e0",
+                    color: fillColor,
                 }),
                 stroke: new Stroke({
-                    color: isSelected ? "#a4a4a4" : "#a4a4a4",
+                    color: strokeColor,
                     width: 1,
                 }),
             });
@@ -143,6 +157,29 @@ export class MtCountryTest implements AfterViewInit {
                 console.log('Name:', properties['name'] || properties['NAME'] || 'Unknown');
                 this.selectedCountry = properties['iso_a2'] || 'Unknown';
                 console.log('Selected iso_a2:', this.selectedCountry);
+                
+                // Print country metadata from CountryData
+                const countryInfo = CountryData.get(this.selectedCountry);
+                if (countryInfo) {
+                    console.log('Country Metadata:', {
+                        code: this.selectedCountry,
+                        iso_a3: countryInfo.iso_a3,
+                        name: countryInfo.name,
+                        ibfSupported: countryInfo.ibfSupported,
+                        initialZoom: countryInfo.initialZoom,
+                        latlong: countryInfo.latlong
+                    });
+                    
+                    // Focus the map on the country center
+                    const [lat, lon] = countryInfo.latlong;
+                    this.map.getView().animate({
+                        center: fromLonLat([lon, lat]),
+                        zoom: countryInfo.initialZoom,
+                        duration: 500
+                    });
+                } else {
+                    console.log('No metadata found for country:', this.selectedCountry);
+                }
                 
                 // Refresh both layers to update styles
                 this.vAdmin0.changed();
