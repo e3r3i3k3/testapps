@@ -59,8 +59,8 @@ export class MaptilerTest implements AfterViewInit {
     private initMap(): void {
         const key = superSecretApiKey;
         // Options: basic-v2 (smallest), streets-v2, outdoor-v2, dataviz, topo-v4
-        const dataJson__ = `https://api.maptiler.com/maps/basic-v2/style.json?key=${key}`;
-        const dataJson = `https://api.maptiler.com/maps/019c41d2-17c7-7e5e-9a47-d3b3f9515a5b/style.json?key=${key}`;
+        const dataJson = `https://api.maptiler.com/maps/basic-v2/style.json?key=${key}`;
+        //const dataJson = `https://api.maptiler.com/maps/019c41d2-17c7-7e5e-9a47-d3b3f9515a5b/style.json?key=${key}`;
         
         const attribution = new Attribution({
             collapsible: false,
@@ -145,20 +145,23 @@ export class MaptilerTest implements AfterViewInit {
                 // Find the actual source name used by boundary layers
                 const boundaryLayer = style.layers.find((l: any) => l['source-layer'] === 'boundary');
                 const sourceName = boundaryLayer ? boundaryLayer.source : 'maptiler_planet';
-                /*
-                // Add custom layer for Uganda admin level 1 areas - boundary is a line layer
-                style.layers.push({
-                    'id': 'bbbbbb',
-                    'type': 'line',
-                    'source': sourceName,
-                    'source-layer': 'boundary',
-                    'paint': {
-                        'line-color': '#7373a2',
-                        'line-width': 1,
-                        'line-opacity': 0.8
-                    }
-                });*/
+
+                // Ensure glyphs URL has key
+                if (style.glyphs && style.glyphs.includes('{key}')) {
+                    style.glyphs = style.glyphs.replace('{key}', key);
+                }
                 
+                // Inspect sources to fix potential mismatch
+                const sourceKeys = Object.keys(style.sources);
+                if (sourceKeys.includes('maptiler_planet') && !sourceKeys.includes('maptiler_planet_v4')) {
+                    // MapTiler sometimes returns layers pointing to v4 but source is defined as loose maptiler_planet
+                    style.layers.forEach((l: any) => {
+                        if (l.source === 'maptiler_planet_v4') {
+                            l.source = 'maptiler_planet';
+                        }
+                    });
+                }
+
                 // Apply the modified style
                 apply(this.map, style);
             })

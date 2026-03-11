@@ -3,10 +3,10 @@ from contextlib import contextmanager
 
 # Database connection info
 POSTGRES_HOST = "localhost"
-POSTGRES_DB = "postgres"
-POSTGRES_USER = "admin"
-POSTGRES_PASSWORD = "eee"
-POSTGRES_PORT = 5432
+POSTGRES_DB = "ibf"
+POSTGRES_USER = "ibf"
+POSTGRES_PASSWORD = "ibf"
+POSTGRES_PORT = 5436 #5432
 
 
 @contextmanager

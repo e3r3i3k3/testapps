@@ -29,3 +29,9 @@ yarn-debug.log*
 yarn-error.log*
 
 .DS_Store
+pytest/PopData/eth_pd_2020_1km_UNadj.tif
+pytest/PopData/ken_pd_2020_1km_UNadj.tif
+pytest/PopData/metadata.json
+pytest/PopData/mwi_pd_2020_1km_UNadj.tif
+pytest/PopData/phl_pd_2020_1km_UNadj.tif
+pytest/PopData/zmb_pd_2020_1km_UNadj.tif
