@@ -97,7 +97,7 @@ def create_admin_boundaries_table(conn):
         'geom': 'GEOMETRY(MultiPolygon, 4326)'
     }
     
-    create_spatial_table(conn, TABLE_NAME, columns, drop_if_exists=True)
+    create_spatial_table(conn, TABLE_NAME, columns)
 
 
 def insert_admin_boundaries_data(conn, features):
@@ -167,7 +167,7 @@ def create_admin_boundaries_tables():
     print("="*50)
     print("Creating Admin Boundaries Table")
     print("="*50 + "\n")
-    
+
     # Load data from JSON files
     features = load_admin_boundaries_data(JSON_DIR)
     

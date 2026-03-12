@@ -41,7 +41,7 @@ def enable_postgis(conn):
     print("PostGIS extension enabled!")
 
 
-def create_spatial_table(conn, table_name, columns, drop_if_exists=True):
+def create_spatial_table(conn, table_name, columns):
     """
     Create a table with spatial capabilities.
     
@@ -49,7 +49,6 @@ def create_spatial_table(conn, table_name, columns, drop_if_exists=True):
         conn: Database connection object
         table_name: Name of the table to create
         columns: Dictionary of column definitions (name: type)
-        drop_if_exists: Whether to drop the table if it already exists
         
     Example:
         columns = {
@@ -61,11 +60,8 @@ def create_spatial_table(conn, table_name, columns, drop_if_exists=True):
         }
     """
     with conn.cursor() as cur:
-        if drop_if_exists:
-            cur.execute(f"DROP TABLE IF EXISTS {table_name};")
-        
         column_defs = ", ".join([f"{name} {type_}" for name, type_ in columns.items()])
-        create_sql = f"CREATE TABLE {table_name} ({column_defs});"
+        create_sql = f"CREATE TABLE IF NOT EXISTS {table_name} ({column_defs});"
         
         cur.execute(create_sql)
         conn.commit()
@@ -83,6 +79,6 @@ def create_spatial_index(conn, table_name, geom_column='geom'):
     """
     with conn.cursor() as cur:
         index_name = f"{table_name}_{geom_column}_idx"
-        cur.execute(f"CREATE INDEX {index_name} ON {table_name} USING GIST ({geom_column});")
+        cur.execute(f"CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIST ({geom_column});")
         conn.commit()
     print(f"Spatial index created on {table_name}.{geom_column}!")
