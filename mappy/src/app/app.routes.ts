@@ -15,6 +15,8 @@ import { Links } from './links';
 import { TopoGLTest } from './webgl/topogl';
 import { MtCountryTest } from './vector/mtcountry';
 import { HippoTest } from './vector/hippo';
+import { MapboxTest } from './vector/mapbox';
+import { MaplibreTest } from './vector/maplibre';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'links'},
@@ -33,5 +35,7 @@ export const routes: Routes = [
   { path: 'links', component: Links },
   { path: 'topogl', component: TopoGLTest },
   { path: 'mtcountry', component: MtCountryTest },
-  { path: 'hippo', component: HippoTest }
+  { path: 'hippo', component: HippoTest },
+  { path: 'maplibre', component: MaplibreTest },
+  { path: 'mapbox', component: MapboxTest },
 ];
