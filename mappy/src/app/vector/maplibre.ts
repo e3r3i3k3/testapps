@@ -281,10 +281,10 @@ export class MaplibreTest implements AfterViewInit, OnDestroy {
 
     private addStaticImageLayer2(): void {
         // Image bounds in EPSG:4326 (WGS84)
-        const bounds: LngLatBoundsLike = [
-            [21.998751327743022, -18.077933333316892],  // SW
-            [33.70958469341794, -8.202933333325873]     // NE
-        ];
+        const minLon = 21.998751327743022;
+        const maxLon = 33.70958469341794;
+        const minLat = -18.077933333316892;
+        const maxLat = -8.202933333325873;
         
         // Load and process the image with color gradient shader
         const img = new Image();
@@ -292,24 +292,30 @@ export class MaplibreTest implements AfterViewInit, OnDestroy {
         img.src = 'image/flood_map_ZMB_RP20_f16.png';
         
         img.onload = () => {
-            this.png2Canvas = document.createElement('canvas');
-            this.png2Canvas.width = img.width;
-            this.png2Canvas.height = img.height;
-            const ctx = this.png2Canvas.getContext('2d')!;
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(img, 0, 0);
+            // First, reproject the image from EPSG:4326 to Web Mercator
+            const reprojectedCanvas = this.reprojectToMercator(img, minLon, maxLon, minLat, maxLat);
             
+            // Now apply the shader to the reprojected image
+            this.png2Canvas = reprojectedCanvas;
             this.applyFloodShader();
+            
+            // Calculate Mercator bounds for the coordinates
+            const minY = this.latToMercatorY(minLat);
+            const maxY = this.latToMercatorY(maxLat);
+            
+            // Convert back to lat for MapLibre coordinates (these will now match the warped image)
+            const topLat = this.mercatorYToLat(maxY);
+            const bottomLat = this.mercatorYToLat(minY);
             
             // Add the processed image as a source
             this.map.addSource('flood-png', {
                 type: 'image',
                 url: this.png2Canvas.toDataURL(),
                 coordinates: [
-                    [21.998751327743022, -8.202933333325873],   // top-left
-                    [33.70958469341794, -8.202933333325873],    // top-right
-                    [33.70958469341794, -18.077933333316892],   // bottom-right
-                    [21.998751327743022, -18.077933333316892]   // bottom-left
+                    [minLon, topLat],    // top-left
+                    [maxLon, topLat],    // top-right
+                    [maxLon, bottomLat], // bottom-right
+                    [minLon, bottomLat]  // bottom-left
                 ]
             });
 
@@ -322,6 +328,84 @@ export class MaplibreTest implements AfterViewInit, OnDestroy {
                 }
             });
         };
+    }
+
+    // Convert latitude to Web Mercator Y (in radians-based units)
+    private latToMercatorY(lat: number): number {
+        const latRad = lat * Math.PI / 180;
+        return Math.log(Math.tan(Math.PI / 4 + latRad / 2));
+    }
+
+    // Convert Web Mercator Y back to latitude
+    private mercatorYToLat(y: number): number {
+        return (2 * Math.atan(Math.exp(y)) - Math.PI / 2) * 180 / Math.PI;
+    }
+
+    // Reproject an EPSG:4326 image to Web Mercator
+    private reprojectToMercator(
+        img: HTMLImageElement,
+        minLon: number,
+        maxLon: number,
+        minLat: number,
+        maxLat: number
+    ): HTMLCanvasElement {
+        const srcWidth = img.width;
+        const srcHeight = img.height;
+        
+        // Calculate Mercator Y bounds
+        const minMercY = this.latToMercatorY(minLat);
+        const maxMercY = this.latToMercatorY(maxLat);
+        const mercYRange = maxMercY - minMercY;
+        
+        // Calculate output height based on Mercator projection
+        // Keep width the same, adjust height for Mercator stretching
+        const latRange = maxLat - minLat;
+        const avgLat = (minLat + maxLat) / 2;
+        const mercatorStretchFactor = mercYRange / (latRange * Math.PI / 180);
+        const dstHeight = Math.round(srcHeight * mercatorStretchFactor);
+        const dstWidth = srcWidth;
+        
+        // Create source canvas to read pixels
+        const srcCanvas = document.createElement('canvas');
+        srcCanvas.width = srcWidth;
+        srcCanvas.height = srcHeight;
+        const srcCtx = srcCanvas.getContext('2d')!;
+        srcCtx.imageSmoothingEnabled = false;
+        srcCtx.drawImage(img, 0, 0);
+        const srcData = srcCtx.getImageData(0, 0, srcWidth, srcHeight);
+        
+        // Create destination canvas
+        const dstCanvas = document.createElement('canvas');
+        dstCanvas.width = dstWidth;
+        dstCanvas.height = dstHeight;
+        const dstCtx = dstCanvas.getContext('2d')!;
+        const dstData = dstCtx.createImageData(dstWidth, dstHeight);
+        
+        // For each row in the destination (Mercator), find corresponding source row (4326)
+        for (let dstY = 0; dstY < dstHeight; dstY++) {
+            // Calculate Mercator Y for this destination row (top = maxMercY, bottom = minMercY)
+            const mercY = maxMercY - (dstY / dstHeight) * mercYRange;
+            
+            // Convert to latitude
+            const lat = this.mercatorYToLat(mercY);
+            
+            // Calculate source row (top = maxLat, bottom = minLat)
+            const srcYFloat = ((maxLat - lat) / latRange) * srcHeight;
+            const srcY = Math.min(Math.max(Math.floor(srcYFloat), 0), srcHeight - 1);
+            
+            // Copy the row
+            for (let x = 0; x < dstWidth; x++) {
+                const srcIdx = (srcY * srcWidth + x) * 4;
+                const dstIdx = (dstY * dstWidth + x) * 4;
+                dstData.data[dstIdx] = srcData.data[srcIdx];
+                dstData.data[dstIdx + 1] = srcData.data[srcIdx + 1];
+                dstData.data[dstIdx + 2] = srcData.data[srcIdx + 2];
+                dstData.data[dstIdx + 3] = srcData.data[srcIdx + 3];
+            }
+        }
+        
+        dstCtx.putImageData(dstData, 0, 0);
+        return dstCanvas;
     }
 
     private applyFloodShader(): void {
@@ -410,17 +494,24 @@ export class MaplibreTest implements AfterViewInit, OnDestroy {
         
         // Re-apply shader if the flood layer is visible
         if (this.showPng2 && this.png2Canvas) {
-            // Reload the original image and reapply shader
+            const minLon = 21.998751327743022;
+            const maxLon = 33.70958469341794;
+            const minLat = -18.077933333316892;
+            const maxLat = -8.202933333325873;
+            
+            // Reload the original image and reapply shader with reprojection
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.src = 'image/flood_map_ZMB_RP20_f16.png';
             
             img.onload = () => {
-                const ctx = this.png2Canvas!.getContext('2d')!;
-                ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(img, 0, 0);
-                
+                // Reproject and apply shader
+                this.png2Canvas = this.reprojectToMercator(img, minLon, maxLon, minLat, maxLat);
                 this.applyFloodShader();
+                
+                // Calculate Mercator-adjusted coordinates
+                const topLat = this.mercatorYToLat(this.latToMercatorY(maxLat));
+                const bottomLat = this.mercatorYToLat(this.latToMercatorY(minLat));
                 
                 // Update the source with new processed image
                 const source = this.map.getSource('flood-png') as maplibregl.ImageSource;
@@ -428,10 +519,10 @@ export class MaplibreTest implements AfterViewInit, OnDestroy {
                     source.updateImage({
                         url: this.png2Canvas!.toDataURL(),
                         coordinates: [
-                            [21.998751327743022, -8.202933333325873],
-                            [33.70958469341794, -8.202933333325873],
-                            [33.70958469341794, -18.077933333316892],
-                            [21.998751327743022, -18.077933333316892]
+                            [minLon, topLat],
+                            [maxLon, topLat],
+                            [maxLon, bottomLat],
+                            [minLon, bottomLat]
                         ]
                     });
                 }
