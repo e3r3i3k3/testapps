@@ -16,7 +16,7 @@ import GeoJSON from 'ol/format/GeoJSON';
 import { Fill, Stroke, Style } from 'ol/style';
 import CircleStyle from 'ol/style/Circle';
 import Feature from 'ol/Feature';
-import { Polygon } from 'ol/geom';
+import { Point, Polygon } from 'ol/geom';
 
 
 @Component({
@@ -75,6 +75,14 @@ export class HippoTest implements AfterViewInit {
     glofasUriFilter = 'http://localhost:9000/collections/public.glofas_stations/items?filter=country%3D%27ETH%27';
     boundingUriFilter = 'http://localhost:9000/collections/public.extents_data/items?filter=country%3D%27MW%27';
 
+    // GO end points
+    // "rc_locs": f"https://goadmin.ifrc.org/api/v2/public-local-units/?limit={results_limit}",
+    // "hospital_locs": f"https://goadmin.ifrc.org/api/v2/health-local-units/?limit={results_limit}",
+    // Sample data for hospitals
+    //  /Users/ehill/repos/IBF-seed-data/country-data/go-data/hospital_locs.json
+
+    hospitalLocsUri = 'https://goadmin.ifrc.org/api/v2/health-local-units/?country=93&limit=10000'; // country=93 is Kenya (KEN)
+
     borderUri = `http://localhost:9000/collections/public.admin_boundaries/items?filter=country=%27UGA%27%20AND%20admin_level=%27adm3%27&limit=10000&transform=simplify,${this.factor}`;
     //also works: items?transform=ST_Simplify,0.1';
 
@@ -82,8 +90,10 @@ export class HippoTest implements AfterViewInit {
     private bordersLayer: VectorLayer | null = null;
     private greenDotsLayer: VectorLayer | null = null;
     private extentRectsLayer: VectorLayer | null = null;
+    private hospitalsLayer: VectorLayer | null = null;
     showBorders = false;
     showGreenDots = false;
+    showHospitals = false;
 
     togglePoints(): void {
         this.showPoints = !this.showPoints;
@@ -196,6 +206,48 @@ export class HippoTest implements AfterViewInit {
             if (this.extentRectsLayer) {
                 this.map.removeLayer(this.extentRectsLayer);
                 this.extentRectsLayer = null;
+            }
+        }
+    }
+
+    toggleHospitals(): void {
+        this.showHospitals = !this.showHospitals;
+        if (this.showHospitals) {
+            if (this.hospitalsLayer) {
+                this.map.removeLayer(this.hospitalsLayer);
+            }
+            fetch(this.hospitalLocsUri)
+                .then(res => res.json())
+                .then(data => {
+                    const features: Feature[] = [];
+                    for (const item of data.results ?? []) {
+                        const loc = item.location;
+                        if (loc?.lat != null && loc?.lng != null) {
+                            const point = new Feature({
+                                geometry: new Point(fromLonLat([loc.lng, loc.lat])),
+                            });
+                            features.push(point);
+                        }
+                    }
+                    console.log('Hospital features for KEN:', features.length);
+                    const source = new VectorSource({ features });
+                    this.hospitalsLayer = new VectorLayer({
+                        source,
+                        style: new Style({
+                            image: new CircleStyle({
+                                radius: 6,
+                                fill: new Fill({ color: '#8B00FF' }),
+                                stroke: new Stroke({ color: '#4B0082', width: 2 }),
+                            }),
+                        }),
+                        zIndex: 101,
+                    });
+                    this.map.addLayer(this.hospitalsLayer);
+                });
+        } else {
+            if (this.hospitalsLayer) {
+                this.map.removeLayer(this.hospitalsLayer);
+                this.hospitalsLayer = null;
             }
         }
     }
