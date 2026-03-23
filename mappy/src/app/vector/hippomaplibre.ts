@@ -38,8 +38,8 @@ export class HippoMaplibreTest implements AfterViewInit, OnDestroy {
     admin2Factor = 0.005;
     admin3Factor = 0.004;
 
-    glofasUriAll = 'http://localhost:9000/collections/public.glofas_stations/items?limit=10000';
-    glofasUriFilter = 'http://localhost:9000/collections/public.glofas_stations/items?filter=country%3D%27ETH%27';
+    glofasUriAll = 'http://localhost:9000/collections/debug.glofas_stations/items?limit=10000';
+    glofasUriFilter = 'http://localhost:9000/collections/debug.glofas_stations/items?filter=country%3D%27ETH%27';
 
     borderUri = `http://localhost:9000/collections/public.admin_boundaries/items?filter=country=%27UG%27&limit=10000&transform=simplify,${this.factor}`;
 

@@ -84,9 +84,9 @@ export class HippoTest implements AfterViewInit {
     admin2Factor = 0.005;
     admin3Factor = 0.004;
 
-    glofasUriAll = 'http://localhost:9000/collections/public.glofas_stations/items?limit=10000';
-    glofasUriFilter = 'http://localhost:9000/collections/public.glofas_stations/items?filter=country%3D%27ETH%27';
-    boundingUriFilter = 'http://localhost:9000/collections/public.extents_data/items?filter=country%3D%27MW%27';
+    glofasUriAll = 'http://localhost:9000/collections/debug.glofas_stations/items?limit=10000';
+    glofasUriFilter = 'http://localhost:9000/collections/debug.glofas_stations/items?filter=country%3D%27ETH%27';
+    boundingUriFilter = 'http://localhost:9000/collections/debug.extents_data/items?filter=country%3D%27MW%27';
 
     // GO end points
     // "rc_locs": f"https://goadmin.ifrc.org/api/v2/public-local-units/?limit={results_limit}",
