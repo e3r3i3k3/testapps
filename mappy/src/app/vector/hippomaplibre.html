@@ -51,16 +51,16 @@
 <main class="main">
     <div class="content">
         <h1>Test Map (MapLibre)</h1>
-        <div id="map"></div>
+
+        <div style="position: relative;">
+            <div id="map"></div>
+        </div>
 
         <div class="map-controls">
             <button (click)="togglePoints()" [class.active]="showPoints">Toggle Points</button>
         </div>
         <div class="map-controls">
             <button (click)="toggleBorders()" [class.active]="showBorders">Toggle Borders</button>
-        </div>
-        <div class="map-controls">
-            <button (click)="exportToPdf()">Export to PDF</button>
         </div>
 
     </div>

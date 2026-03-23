@@ -30,7 +30,12 @@
 <main class="main">
     <div class="content">
         <h1>Maptiler Test Map</h1>
-        <div id="map"></div>
+        <div style="position: relative;">
+            <div id="map"></div>
+            <div style="position: absolute; bottom: 20px; left: 20px; background-color: yellow; padding: 10px; z-index: 1000; font-weight: bold; border: 1px solid black;">
+                sample map
+            </div>
+        </div>
         <div style="margin-top: 15px;">
             <button (click)="toggleRasterLayerEth()" 
                     [class.active]="showRasterLayerEth"
@@ -57,13 +62,6 @@
                     style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer; margin-left: 10px;">
                 {{ showStaticPng ? 'Hide' : 'Show' }} s1
             </button>
-        </div>
-        <div style="margin-top: 15px;">
-            <label for="threshold-slider" style="margin-right: 10px;">Threshold: {{ thresholdValue.toFixed(3) }}</label>
-            <input id="threshold-slider" type="range" min="0.000001" max=".9999999" step="0.0001" 
-                   [value]="thresholdValue" 
-                   (input)="onThresholdChange($event)"
-                   style="width: 300px; vertical-align: middle;">
         </div>
         <div style="margin-top: 15px;">
             <img src="image/eth_pd_2020_1km_UNadj.png" alt="Ethiopia Population Density 2020" style="max-width: 100%; height: auto; border: 1px solid #ccc;">

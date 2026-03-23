@@ -7,6 +7,7 @@ import VectorTileLayer from 'ol/layer/VectorTile';
 import { TileWMS, XYZ } from 'ol/source';
 import RasterSource from 'ol/source/Raster.js';
 import StadiaMaps from 'ol/source/StadiaMaps.js';
+import Static from 'ol/source/ImageStatic';
 import { attributions, GeoServerService, geoserverUrl, mapSources, RasterLayerIbfName, VectorLayerIbfName } from '../../GeoServer.service';
 import TileLayer from 'ol/layer/Tile';
 import VectorSource from 'ol/source/Vector';
@@ -17,7 +18,18 @@ import { Fill, Stroke, Style } from 'ol/style';
 import CircleStyle from 'ol/style/Circle';
 import Feature from 'ol/Feature';
 import { Point, Polygon } from 'ol/geom';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
+function Lerpp(a: number[], b: number[], t: number): number[] {
+    const output = [];
+    for (let i = 0; i < a.length; i++) {
+        let aVal = a[i];
+        let bVal = (b[i] - a[i]) * t;
+        output.push(aVal + bVal);
+    }
+    return output;
+}
 
 @Component({
     selector: 'app-layers',
@@ -42,7 +54,8 @@ export class HippoTest implements AfterViewInit {
             source: new XYZ({
                 url: mapSources[this.selection],
                 attributions: attributions[this.selection],
-                maxZoom: 19
+                maxZoom: 19,
+                crossOrigin: 'anonymous'
             })
         });
 
@@ -94,6 +107,12 @@ export class HippoTest implements AfterViewInit {
     showBorders = false;
     showGreenDots = false;
     showHospitals = false;
+    
+    // Flood Raster Processing properties
+    private png2Layer?: ImageLayer<RasterSource>;
+    showPng2 = false;
+    private rasterSource?: RasterSource;
+    thresholdValue = 0.1;
 
     togglePoints(): void {
         this.showPoints = !this.showPoints;
@@ -283,6 +302,160 @@ export class HippoTest implements AfterViewInit {
                 this.bordersLayer = null;
             }
         }
+    }
+
+    togglePng2(): void {
+        this.showPng2 = !this.showPng2;
+        if (this.showPng2) {
+            this.png2Layer = this.addStaticImageLayer2();
+        } else {
+            if (this.png2Layer) {
+                this.map.removeLayer(this.png2Layer);
+                this.png2Layer = undefined;
+            }
+        }
+    }
+
+    private addStaticImageLayer2(): ImageLayer<RasterSource> {
+        // Image bounds in EPSG:4326 (WGS84)
+        const bounds = [21.998751327743022, -18.077933333316892, 33.70958469341794, -8.202933333325873];
+        
+        // Create the base static image source
+        const staticSource = new Static({
+            url: 'image/flood_map_ZMB_RP20_f16.png',
+            imageExtent: bounds,
+            projection: 'EPSG:4326',
+            interpolate: false, // Disable interpolation for crisp pixels
+            crossOrigin: 'anonymous' // Important for html2canvas export
+        });
+
+        // Create a raster source with a color gradient shader
+        this.rasterSource = new RasterSource({
+            sources: [staticSource],
+            operation: (pixels, data) => {
+                // pixels is an array of pixel arrays from each source
+                const pixel = pixels[0];
+                
+                // Check if pixel is an array, return magenta if not
+                if (!Array.isArray(pixel)) {
+                    return [255, 0, 255, 255]; // Magenta
+                }
+                
+                let value = pixel[0]/(255);
+                value = value * 10 * data.threshold;
+                
+                // increase value and cap it
+                value = Math.min(value , 1);
+                value = Math.max(value, 0);
+
+
+                if (value < 0.00001) {
+                    return [0,0,0,0]; // Transparent for very low values
+                }
+                let output = [0,0,0, 255];
+
+                // let nn = rgb(255, 242, 0);
+                const color0 = [255, 255, 50, 150];
+                const color1 = [255, 0,0, 255];
+                const color2 = [50, 0, 255, 255];
+                
+                if (value <= 0.5) {
+                    // Interpolate between color0 and color1
+                    const t = value * 2; // Normalize to 0-1 for first half
+                    output = Lerpp(color0, color1, t);
+                } else {
+                    // Interpolate between color1 and color2
+                    const t = (value - .5) * 2; // Normalize to 0-1 for second half
+                    output = Lerpp(color1, color2, t);
+                }
+                
+                // Return RGBA
+                return output;
+            },
+            lib: {
+                threshold: this.thresholdValue,
+                Lerpp : Lerpp
+            }
+        });
+        
+        // Disable interpolation on the raster source's internal context
+        this.rasterSource.on('beforeoperations', (event: any) => {
+            event.data.threshold = this.thresholdValue;
+        });
+
+        const imageLayer = new ImageLayer({
+            source: this.rasterSource,
+            opacity: 0.7
+        });
+        
+        this.map.addLayer(imageLayer);
+        return imageLayer;
+    }
+
+    exportPdf(): void {
+        const mapElement = this.map.getViewport();
+        const greenBox = document.getElementById('green-box');
+        
+        if (!mapElement || !greenBox) {
+            console.error('Elements not found');
+            return;
+        }
+
+        // Use A4 landscape dimensions (mm)
+        const pdfWidth = 297;
+        const pdfHeight = 210;
+        const pdf = new jsPDF('landscape', 'mm', 'a4');
+
+        // Wait for map render complete before exporting
+        this.map.once('rendercomplete', () => {
+             // Capture map with overlay
+            // We need to pass the parent container of the viewport to capture the overlay as well
+            // However, OpenLayers canvas often needs special handling. 
+            // In our HTML: <div style="position: relative;">...</div> which is the parent of #ol-map
+            const mapTarget = document.getElementById('ol-map');
+
+            if (!mapTarget || !mapTarget.parentElement) return;
+
+            const exportContainer = mapTarget.parentElement;
+
+             html2canvas(exportContainer, { 
+                 useCORS: true,
+                 allowTaint: false,
+                 // Sometimes helper options improve map capture
+                 ignoreElements: (element) => {
+                     return element.classList.contains('ol-control'); // Exclude controls if desired
+                 }
+             }).then(mapCanvas => {
+                const mapImgData = mapCanvas.toDataURL('image/png');
+                const mapProps = pdf.getImageProperties(mapImgData);
+                const mapHeight = (mapProps.height * pdfWidth) / mapProps.width;
+                
+                pdf.addImage(mapImgData, 'PNG', 0, 0, pdfWidth, mapHeight);
+
+                // If we have space on the first page
+                let currentY = mapHeight + 10;
+                
+                html2canvas(greenBox, { 
+                    useCORS: true,
+                    allowTaint: false 
+                }).then(greenBoxCanvas => {
+                    const gbImgData = greenBoxCanvas.toDataURL('image/png');
+                    const gbProps = pdf.getImageProperties(gbImgData);
+                    const gbHeight = (gbProps.height * pdfWidth) / gbProps.width;
+
+                    if (currentY + gbHeight > pdfHeight) {
+                        pdf.addPage();
+                        currentY = 10;
+                    }
+
+                    pdf.addImage(gbImgData, 'PNG', 0, currentY, pdfWidth, gbHeight);
+                    pdf.save('map-export.pdf');
+                });
+            });
+        });
+
+        // Trigger a render to ensure 'rendercomplete' fires
+        this.map.renderSync();
     }
 
 

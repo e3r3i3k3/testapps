@@ -96,8 +96,19 @@
 <main class="main">
     <div class="content">
         <h1>Test Map</h1>
-        <div id="ol-map"></div>
+        <div style="position: relative;">
+            <div id="ol-map"></div>
+            <div style="position: absolute; bottom: 20px; left: 20px; background-color: yellow; padding: 10px; z-index: 1000; font-weight: bold; border: 1px solid black;">
+                Test export UI
+            </div>
+        </div>
+        <div id="green-box" style="width: 100%; height: 500px; background-color: green; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin-top: 20px;">
+            test test test BBBBBBBB
+        </div>
 
+        <div class="map-controls">
+             <button (click)="exportPdf()" style="background-color: #e74c3c; color: white !important; border-color: #c0392b;">Export PDF</button>
+        </div>
 
         <div class="map-controls">
             <button (click)="togglePoints()">Toggle Points</button>
@@ -110,6 +121,9 @@
         </div>
         <div class="map-controls">
             <button (click)="toggleHospitals()">Toggle Kenya Hospitals</button>
+        </div>
+        <div class="map-controls">
+            <button (click)="togglePng2()" [class.active]="showPng2">Toggle Flood Processing</button>
         </div>
 
     </div>

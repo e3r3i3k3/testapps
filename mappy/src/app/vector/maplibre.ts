@@ -297,7 +297,7 @@ export class MaplibreTest implements AfterViewInit, OnDestroy {
             
             // Now apply the shader to the reprojected image
             this.png2Canvas = reprojectedCanvas;
-            this.applyFloodShader();
+            //this.applyFloodShader();
             
             // Calculate Mercator bounds for the coordinates
             const minY = this.latToMercatorY(minLat);
@@ -454,6 +454,9 @@ export class MaplibreTest implements AfterViewInit, OnDestroy {
             this.addStaticImageLayerPlain();
         } else {
             this.removeLayerAndSource('static-png');
+            if (this.png2Canvas) {
+                this.png2Canvas = undefined;
+            }
         }
     }
 
@@ -462,71 +465,40 @@ export class MaplibreTest implements AfterViewInit, OnDestroy {
         // Original EPSG:3857 bounds: [2448889.795892204, -2046712.1534877932, 3752503.10182657, -916281.9228305662]
         // Converted to EPSG:4326: approximately [22.0, -18.08, 33.71, -8.20]
         
-        this.map.addSource('static-png', {
-            type: 'image',
-            url: 'image/flood_map_ZMB_RP20_c0_b3857.png',
-            coordinates: [
-                [21.998751327743022, -8.202933333325873],   // top-left
-                [33.70958469341794, -8.202933333325873],    // top-right
-                [33.70958469341794, -18.077933333316892],   // bottom-right
-                [21.998751327743022, -18.077933333316892]   // bottom-left
-            ]
-        });
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = 'image/flood_map_ZMB_RP20_c0_b3857.png';
 
-        this.map.addLayer({
-            id: 'static-png',
-            type: 'raster',
-            source: 'static-png',
-            paint: {
-                'raster-opacity': 0.7
-            }
-        });
-    }
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d')!;
+            ctx.drawImage(img, 0, 0);
 
-    onThresholdChange(event: Event): void {
-        const target = event.target as HTMLInputElement;
-        this.thresholdValue = parseFloat(target.value);
+            this.png2Canvas = canvas;
+            this.applyFloodShader();
 
-        const output = document.getElementById('thresholdOut');
-        if (output) {
-            output.textContent = target.value;
-        }
-        
-        // Re-apply shader if the flood layer is visible
-        if (this.showPng2 && this.png2Canvas) {
-            const minLon = 21.998751327743022;
-            const maxLon = 33.70958469341794;
-            const minLat = -18.077933333316892;
-            const maxLat = -8.202933333325873;
-            
-            // Reload the original image and reapply shader with reprojection
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.src = 'image/flood_map_ZMB_RP20_f16.png';
-            
-            img.onload = () => {
-                // Reproject and apply shader
-                this.png2Canvas = this.reprojectToMercator(img, minLon, maxLon, minLat, maxLat);
-                this.applyFloodShader();
-                
-                // Calculate Mercator-adjusted coordinates
-                const topLat = this.mercatorYToLat(this.latToMercatorY(maxLat));
-                const bottomLat = this.mercatorYToLat(this.latToMercatorY(minLat));
-                
-                // Update the source with new processed image
-                const source = this.map.getSource('flood-png') as maplibregl.ImageSource;
-                if (source) {
-                    source.updateImage({
-                        url: this.png2Canvas!.toDataURL(),
-                        coordinates: [
-                            [minLon, topLat],
-                            [maxLon, topLat],
-                            [maxLon, bottomLat],
-                            [minLon, bottomLat]
-                        ]
-                    });
+            this.map.addSource('static-png', {
+                type: 'image',
+                url: this.png2Canvas.toDataURL(),
+                coordinates: [
+                    [21.998751327743022, -8.202933333325873],   // top-left
+                    [33.70958469341794, -8.202933333325873],    // top-right
+                    [33.70958469341794, -18.077933333316892],   // bottom-right
+                    [21.998751327743022, -18.077933333316892]   // bottom-left
+                ]
+            });
+
+            this.map.addLayer({
+                id: 'static-png',
+                type: 'raster',
+                source: 'static-png',
+                paint: {
+                    'raster-opacity': 0.7
                 }
-            };
-        }
+            });
+        };
     }
+
 }

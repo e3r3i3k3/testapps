@@ -41,7 +41,7 @@ export class HippoMaplibreTest implements AfterViewInit, OnDestroy {
     glofasUriAll = 'http://localhost:9000/collections/public.glofas_stations/items?limit=10000';
     glofasUriFilter = 'http://localhost:9000/collections/public.glofas_stations/items?filter=country%3D%27ETH%27';
 
-    borderUri = `http://localhost:9000/collections/public.admin_boundaries/items?filter=country=%27UGA%27%20AND%20admin_level=%27adm3%27&limit=10000&transform=simplify,${this.factor}`;
+    borderUri = `http://localhost:9000/collections/public.admin_boundaries/items?filter=country=%27UG%27&limit=10000&transform=simplify,${this.factor}`;
 
     ngAfterViewInit(): void {
         this.initMap();
@@ -85,6 +85,51 @@ export class HippoMaplibreTest implements AfterViewInit, OnDestroy {
                 Local: 'en'
             });
             this.map.addControl(this.exportControl, 'top-right');
+
+            // Add background image for the label
+            const width = 120; // Enough for "sample map"
+            const height = 40;
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d')!;
+            
+            // Draw yellow box with black border
+            ctx.fillStyle = 'yellow';
+            ctx.fillRect(0, 0, width, height);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2; // Thicker border
+            ctx.strokeRect(0, 0, width, height);
+
+            this.map.addImage('yellow-box', canvas.getContext('2d')!.getImageData(0, 0, width, height));
+
+            // Add source for the label
+            this.updateLabelPosition();
+
+            this.map.addLayer({
+                id: 'sample-label',
+                type: 'symbol',
+                source: 'sample-label',
+                layout: {
+                    'text-field': 'sample map',
+                    'text-size': 14,
+                    'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                    'icon-image': 'yellow-box',
+                    'icon-allow-overlap': true,
+                    'text-allow-overlap': true,
+                    // Center text on icon
+                    'icon-text-fit': 'none', 
+                    // Or use icon-text-fit: both if using a small scalable image
+                    'text-anchor': 'center'
+                },
+                paint: {
+                    'text-color': 'black'
+                }
+            });
+
+            // Update position on move
+            this.map.on('move', () => this.updateLabelPosition());
+            this.map.on('resize', () => this.updateLabelPosition());
         });
 
         // Add click handler for features
@@ -120,6 +165,41 @@ export class HippoMaplibreTest implements AfterViewInit, OnDestroy {
             });
             this.map.getCanvas().style.cursor = features.length > 0 ? 'pointer' : '';
         });
+    }
+
+    private updateLabelPosition(): void {
+        if (!this.map) return;
+        
+        // Calculate bottom-left coordinate (20px from bottom, 20px from left)
+        const canvas = this.map.getCanvas();
+        const padding = 20;
+        // MapLibre coordinates: [x, y], where (0,0) is top-left
+        const point = this.map.unproject([padding + 60, canvas.height - padding - 20]); 
+        // +60 and -20 because anchor is center, and box is 120x40 (so 60x20 is half)
+        
+        const sourceData = {
+            type: 'FeatureCollection',
+            features: [
+                {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [point.lng, point.lat]
+                    },
+                    properties: {}
+                }
+            ]
+        };
+
+        const source = this.map.getSource('sample-label') as maplibregl.GeoJSONSource;
+        if (source) {
+            source.setData(sourceData as any);
+        } else {
+            this.map.addSource('sample-label', {
+                type: 'geojson',
+                data: sourceData as any
+            });
+        }
     }
 
     togglePoints(): void {
@@ -205,15 +285,6 @@ export class HippoMaplibreTest implements AfterViewInit, OnDestroy {
             if (this.map.getSource('borders-source')) {
                 this.map.removeSource('borders-source');
             }
-        }
-    }
-
-    exportToPdf(): void {
-        // The export control button should be in the top-right corner of the map
-        // This function clicks it programmatically
-        const exportBtn = document.querySelector('.maplibregl-ctrl-top-right button') as HTMLButtonElement;
-        if (exportBtn) {
-            exportBtn.click();
         }
     }
 }
