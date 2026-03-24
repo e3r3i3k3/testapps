@@ -1,50 +1,17 @@
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.7.0/ol.css" />
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.css" rel="stylesheet">
 <style>
     #map {
         height: 600px;
     }
-    
-    .ol-popup {
-        position: absolute;
-        background-color: white;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+
+    .mapboxgl-popup {
+        max-width: 300px;
+    }
+
+    .mapboxgl-popup-content {
         padding: 15px;
         border-radius: 10px;
-        border: 1px solid #cccccc;
-        bottom: 12px;
-        left: -50px;
-        min-width: 200px;
-    }
-    .ol-popup:after, .ol-popup:before {
-        top: 100%;
-        border: solid transparent;
-        content: " ";
-        height: 0;
-        width: 0;
-        position: absolute;
-        pointer-events: none;
-    }
-    .ol-popup:after {
-        border-top-color: white;
-        border-width: 10px;
-        left: 48px;
-        margin-left: -10px;
-    }
-    .ol-popup:before {
-        border-top-color: #cccccc;
-        border-width: 11px;
-        left: 48px;
-        margin-left: -11px;
-    }
-    .ol-popup-closer {
-        text-decoration: none;
-        position: absolute;
-        top: 2px;
-        right: 8px;
-        cursor: pointer;
-    }
-    .ol-popup-closer:after {
-        content: "✖";
+        font-size: 14px;
     }
 
     button {
@@ -63,49 +30,41 @@
 
 <main class="main">
     <div class="content">
-        <h1>Maptiler Test Map</h1>
-        <div id="map">
-            <div id="popup" class="ol-popup">
-                <a href="#" id="popup-closer" class="ol-popup-closer"></a>
-                <div id="popup-content"></div>
+        <h1>Mapbox Test Map</h1>
+        <div style="position: relative;">
+            <div id="map"></div>
+            <div style="position: absolute; bottom: 20px; left: 20px; background-color: yellow; padding: 10px; z-index: 1000; font-weight: bold; border: 1px solid black;">
+                Test map
             </div>
         </div>
-        <div style="margin-top: 15px;">
-            <button (click)="toggleRasterLayerEth()" 
-                    [class.active]="showRasterLayerEth"
-                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer;">
-                {{ showRasterLayerEth ? 'Hide' : 'Show' }} Ethiopia Population GeoTiff
-            </button>
-            <button (click)="toggleRasterLayerZmb()" 
-                    [class.active]="showRasterLayerZmb"
-                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer; margin-left: 10px;">
-                {{ showRasterLayerZmb ? 'Hide' : 'Show' }} ZMB Flood GeoTiff
+        <div id="green-box-mapbox" style="width: 100%; height: 100px; background-color: green; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin-top: 20px;">
+            mapbox test
+        </div>
+        <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px;">
+            <button (click)="exportPdf()"
+                    style="padding: 10px 20px; border: 2px solid #e74c3c; background-color: #e74c3c; color: white; border-radius: 5px; cursor: pointer;">
+                Export PDF
             </button>
             <button (click)="togglePopulationPng()" 
                     [class.active]="showPopulationPng"
-                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer;">
                 {{ showPopulationPng ? 'Hide' : 'Show' }} Population PNG
             </button>
             <button (click)="togglePng2()" 
                     [class.active]="showPng2"
-                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer;">
                 {{ showPng2 ? 'Hide' : 'Show' }} s2
             </button>
             <button (click)="toggleStaticPng()" 
                     [class.active]="showStaticPng"
-                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer;">
                 {{ showStaticPng ? 'Hide' : 'Show' }} s1
             </button>
-        </div>
-        <div style="margin-top: 15px;">
-            <label for="threshold-slider" style="margin-right: 10px;">Threshold: {{ thresholdValue.toFixed(3) }}</label>
-            <input id="threshold-slider" type="range" min="0.000001" max=".9999999" step="0.0001" 
-                   [value]="thresholdValue" 
-                   (input)="onThresholdChange($event)"
-                   style="width: 300px; vertical-align: middle;">
-        </div>
-        <div style="margin-top: 15px;">
-            <img src="image/eth_pd_2020_1km_UNadj.png" alt="Ethiopia Population Density 2020" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
+            <button (click)="toggleBorders()" 
+                    [class.active]="showBorders"
+                    style="padding: 10px 20px; border: 2px solid #3498db; background-color: white; color: #3498db; border-radius: 5px; cursor: pointer;">
+                {{ showBorders ? 'Hide' : 'Show' }} Borders
+            </button>
         </div>
     </div>
 </main>
